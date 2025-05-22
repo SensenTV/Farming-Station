@@ -2,7 +2,8 @@ from dash import Dash, html, dcc, Output, Input, State
 import dash
 import sqlite3
 import bcrypt
-from pages.loginpage import login_layout  # Deine Login-/Registrier-Oberfläche
+from pages.loginpage import login_layout  # Login-Oberfläche
+from pages.registerpage import register_layout  # Registrier-Oberfläche
 from ui.auth import verify_user  # Funktion zur Passwortprüfung
 
 app = Dash(__name__, suppress_callback_exceptions=True)
@@ -15,7 +16,7 @@ app.layout = html.Div([
 ])
 
 # Temporärer Login-Speicher
-session = {"logged_in": False}
+session = {"logged_in": False}; {"registered": False}
 
 # Routing: Zeigt Login- oder Dashboard-Ansicht
 @app.callback(
@@ -28,6 +29,8 @@ def display_page(pathname):
             html.H2("Willkommen! Du bist eingeloggt."),
             html.Button("Logout", id="logout-button", n_clicks=0)
         ])
+    if pathname == "/register":
+        return register_layout()
     return login_layout()
 
 # Login & Registrierung in einem Callback
@@ -37,29 +40,33 @@ def display_page(pathname):
     Input('register-button', 'n_clicks'),
     State('username', 'value'),
     State('password', 'value'),
-    State('confirm-password', 'value'),
     prevent_initial_call=True
 )
-def handle_auth(login_clicks, register_clicks, username, password, confirm_password):
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        raise dash.exceptions.PreventUpdate
-
-    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
+def handle_login(login_clicks, username, password):
     if not username or not password:
         return "Bitte Benutzername und Passwort eingeben."
 
-    if trigger_id == 'login-button':
-        if verify_user(username, password):
-            session["logged_in"] = True
-            return dcc.Location(pathname='/', id='redirect')
-        else:
-            return "Benutzername oder Passwort falsch."
+    if verify_user(username, password):
+        session["logged_in"] = True
+        return dcc.Location(pathname='/', id='redirect')
+    else:
+        return "Benutzername oder Passwort falsch"
 
-    elif trigger_id == 'register-button':
-        if password != confirm_password:
-            return "Die Passwörter stimmen nicht überein."
+@app.callback(
+    Output('register-output', 'children'),
+    Input('register-button', 'n_clicks'),
+    State('username', 'value'),
+    State('password', 'value'),
+    State('confirm_password', 'value'),
+    prevent_initial_call=True
+)
+
+def handle_register(register_clicks, username, password, confirm_password):
+    if not username or not password or not confirm_password:
+        return "Bitte alle Felder ausfüllen."
+
+    if password != confirm_password:
+        return "Die Passwörter stimmen nicht überein."
 
         # Passwort sicher hashen
         hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
