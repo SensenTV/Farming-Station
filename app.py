@@ -5,7 +5,10 @@ import sqlite3
 import bcrypt
 from pages.loginpage import login_layout  # Login-Oberfläche
 from pages.registerpage import register_layout  # Registrier-Oberfläche
-from ui.auth import verify_user  # Funktion zur Passwortprüfung
+from authentification.auth import verify_user  # Funktion zur Passwortprüfung
+from pages.user_dashboardpage import user_dashboard_layout
+from pages.admin_dashboardpage import admin_dashboard_layout
+
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.CYBORG])
 app.title = "Farming Station"
@@ -13,45 +16,71 @@ app.title = "Farming Station"
 # Layout mit Platzhalter für dynamischen Seiteninhalt
 app.layout = dbc.Container([
     dcc.Location(id='url', refresh=False),
+    dcc.Store(id='session-store', storage_type='session'),  # session = Tab/Browser geöffnet
     html.Div(id='page-content'),
-],fluid=True)
+], fluid=True)
 
-# Temporärer Login-Speicher
-session = {"logged_in": False}; {"registered": False}
 
 # Routing: Zeigt Login- oder Dashboard-Ansicht
 @app.callback(
     Output('page-content', 'children'),
-    Input('url', 'pathname')
+    Input('url', 'pathname'),
+    State('session-store', 'data')
 )
-def display_page(pathname):
-    if session.get("logged_in"):
-        return dbc.Container([
-            dbc.Alert("Willkommen! Du bist eingeloggt.", color="success"),
-            dbc.Button("Logout", id="logout-button", n_clicks=0)
-        ])
+def display_page(pathname, session_data):
+    if session_data and session_data.get("logged_in"):
+
+        # Admin Dashboard
+        if pathname == "/admin" and session_data.get("role") == "admin":
+            return admin_dashboard_layout()
+
+        # User Dashboard
+        elif pathname == "/user" and session_data.get("role") == "user":
+            return user_dashboard_layout()
+
+        # Default Dashboard, wenn kein spezieller Pfad
+        elif session_data.get("role") == "admin":
+            return admin_dashboard_layout()
+        elif session_data.get("role") == "user":
+            return user_dashboard_layout()
+
+        # Falls Rolle unbekannt, Logout erzwingen oder Login anzeigen
+        else:
+            return login_layout()
+
+    # Für Register-Seite
     if pathname == "/register":
         return register_layout()
+
+    # Standard: Login-Seite
     return login_layout()
 
-# Login & Registrierung in einem Callback
+
+# Login Callback: Session in dcc.Store speichern und redirect setzen
 @app.callback(
     Output('login-output', 'children'),
+    Output('session-store', 'data'),
+    Output('url', 'pathname'),
     Input('login-button', 'n_clicks'),
-    Input('register-button', 'n_clicks'),
     State('username', 'value'),
     State('password', 'value'),
     prevent_initial_call=True
 )
 def handle_login(login_clicks, username, password):
     if not username or not password:
-        return dbc.Alert("Bitte Benutzername und Passwort eingeben.", color="danger")
+        return dbc.Alert("Bitte Benutzername und Passwort eingeben.", color="danger"), dash.no_update, dash.no_update
 
-    if verify_user(username, password):
-        session["logged_in"] = True
-        return dcc.Location(pathname='/', id='redirect')
-    else:
-        return dbc.Alert("Benutzername oder Passwort falsch", color="danger")
+    valid, role = verify_user(username, password)
+
+    if valid:
+        session_data = {"logged_in": True, "role": role}
+        if role == "admin":
+            return dash.no_update, session_data, '/admin'
+        else:
+            return dash.no_update, session_data, '/user'
+
+    return dbc.Alert("Benutzername oder Passwort falsch", color="danger"), dash.no_update, dash.no_update
+
 
 @app.callback(
     Output('register-output', 'children'),
@@ -61,7 +90,6 @@ def handle_login(login_clicks, username, password):
     State('confirm_password', 'value'),
     prevent_initial_call=True
 )
-
 def handle_register(register_clicks, username, password, confirm_password):
     if not username or not password or not confirm_password:
         return dbc.Alert("Bitte alle Felder ausfüllen.", color="danger")
@@ -81,16 +109,6 @@ def handle_register(register_clicks, username, password, confirm_password):
         return dbc.Alert("Registrierung erfolgreich! Du kannst dich jetzt einloggen.", color="success")
     except sqlite3.IntegrityError:
         return dbc.Alert("Benutzername existiert bereits.", color="danger")
-
-# Optional: Logout-Funktion vorbereiten
-@app.callback(
-    Output('url', 'pathname'),
-    Input('logout-button', 'n_clicks'),
-    prevent_initial_call=True
-)
-def logout(n_clicks):
-    session["logged_in"] = False
-    return "/"
 
 if __name__ == '__main__':
     app.run(debug=True)

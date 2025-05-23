@@ -499,7 +499,7 @@
     </routine>
     <schema id="191" parent="1" name="main">
       <Current>1</Current>
-      <LastIntrospectionLocalTimestamp>2025-05-20.09:56:52</LastIntrospectionLocalTimestamp>
+      <LastIntrospectionLocalTimestamp>2025-05-23.18:56:38</LastIntrospectionLocalTimestamp>
     </schema>
     <argument id="192" parent="16">
       <ArgumentDirection>R</ArgumentDirection>
@@ -1638,16 +1638,21 @@
       <Position>3</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="568" parent="557" name="sqlite_autoindex_user_1">
+    <column id="568" parent="557" name="role">
+      <DefaultExpression>&apos;user&apos;</DefaultExpression>
+      <Position>4</Position>
+      <StoredType>TEXT|0s</StoredType>
+    </column>
+    <index id="569" parent="557" name="sqlite_autoindex_user_1">
       <ColNames>username</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="569" parent="557">
+    <key id="570" parent="557">
       <ColNames>user_id</ColNames>
       <Primary>1</Primary>
     </key>
-    <key id="570" parent="557">
+    <key id="571" parent="557">
       <ColNames>username</ColNames>
       <UnderlyingIndexName>sqlite_autoindex_user_1</UnderlyingIndexName>
     </key>
