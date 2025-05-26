@@ -1,7 +1,5 @@
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Output, Input
-from dash import get_app
-app = get_app()
 
 def user_dashboard_layout():
         return dbc.Container([
@@ -33,13 +31,3 @@ def user_dashboard_layout():
         ],
         fluid=True,
     )
-
-# Logout Callback: Session leeren und zurück zum Login
-@app.callback(
-    Output('session-store', 'data'),
-    Output('url', 'pathname'),
-    Input('logout-button', 'n_clicks'),
-    prevent_initial_call=True
-)
-def logout(n_clicks):
-    return {}, '/'

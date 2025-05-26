@@ -59,8 +59,8 @@ def display_page(pathname, session_data):
 # Login Callback: Session in dcc.Store speichern und redirect setzen
 @app.callback(
     Output('login-output', 'children'),
-    Output('session-store', 'data'),
-    Output('url', 'pathname'),
+    Output('session-store', 'data', allow_duplicate=True),
+    Output('url', 'pathname', allow_duplicate=True),
     Input('login-button', 'n_clicks'),
     State('username', 'value'),
     State('password', 'value'),
@@ -109,6 +109,16 @@ def handle_register(register_clicks, username, password, confirm_password):
         return dbc.Alert("Registrierung erfolgreich! Du kannst dich jetzt einloggen.", color="success")
     except sqlite3.IntegrityError:
         return dbc.Alert("Benutzername existiert bereits.", color="danger")
+
+# Logout Callback: Session leeren und zurück zum Login
+@app.callback(
+    Output('session-store', 'data', allow_duplicate=True),
+    Output('url', 'pathname', allow_duplicate=True),
+    Input('logout-button', 'n_clicks'),
+    prevent_initial_call=True
+)
+def logout(n_clicks):
+    return {}, '/'
 
 if __name__ == '__main__':
     app.run(debug=True)
