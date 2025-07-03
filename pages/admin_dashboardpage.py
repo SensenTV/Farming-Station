@@ -3,6 +3,7 @@ from dash import html, Output, Input, dcc, callback, dash, callback_context
 import plotly.graph_objs as go
 from datetime import datetime
 import json
+from dash.dependencies import State
 import os
 
 # Funktion zum Laden der gespeicherten Zeitstempel
@@ -50,39 +51,47 @@ def admin_dashboard_layout():
                     html.Div([
                         html.Strong("Füllstand: ", style={"color": COLOR_SCHEME['text_primary']}),
                         html.Span(id="fuellstand-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="fuellstand-graph-btn", size="sm", 
+                        dbc.Button("Graph", id="fuellstand-graph-btn", size="sm",
                                  className="ms-2", color="primary")
-                    ], className="mb-2"),
+                    ],
+                    className="mb-2"),
                     html.Div([
                         html.Strong("PH: ", style={"color": COLOR_SCHEME['text_primary']}),
                         html.Span(id="ph-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="ph-graph-btn", size="sm", 
+                        dbc.Button("Graph", id="ph-graph-btn", size="sm",
                                  className="ms-2", color="primary")
-                    ], className="mb-2"),
+                    ],
+                    className="mb-2"),
                     html.Div([
                         html.Strong("EC: ", style={"color": COLOR_SCHEME['text_primary']}),
                         html.Span(id="ec-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="ec-graph-btn", size="sm", 
+                        dbc.Button("Graph", id="ec-graph-btn", size="sm",
                                  className="ms-2", color="primary")
-                    ], className="mb-2"),
+                    ],
+                    className="mb-2"),
                     html.Div([
                         html.Strong("Temp: ", style={"color": COLOR_SCHEME['text_primary']}),
                         html.Span(id="temp-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="temp-graph-btn", size="sm", 
+                        dbc.Button("Graph", id="temp-graph-btn", size="sm",
                                  className="ms-2", color="primary")
-                    ], className="mb-2"),
+                    ],
+                    className="mb-2"),
                     html.Div([
                         html.Strong("Luftfeuchtigkeit: ", style={"color": COLOR_SCHEME['text_primary']}),
                         html.Span(id="luft-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="luft-graph-btn", size="sm", 
+                        dbc.Button("Graph", id="luft-graph-btn", size="sm",
                                  className="ms-2", color="primary")
                     ], className="mb-2"),
                 ], md=6),
-                
+
                 dbc.Col([
-                    dcc.Graph(id="sensor-graph", 
-                             style={"height": "300px"})
+                    html.Div(
+                        dcc.Graph(id="sensor-graph", style={"height": "300px"}),
+                        id="graph-container",
+                        style={"display": "none"}  # Anfangs versteckt
+                    )
                 ], md=6)
+
             ]),
 
             html.Hr(style={"border-color": COLOR_SCHEME['border']}),
@@ -234,18 +243,20 @@ def update_timestamps(luefter_value, pumpe_value):
 # Die Callbacks bleiben gleich, aber update_graph wird angepasst:
 
 @callback(
-    Output("sensor-graph", "figure"),
+    [Output("sensor-graph", "figure"),
+     Output("graph-container", "style")],
     [Input("fuellstand-graph-btn", "n_clicks"),
      Input("ph-graph-btn", "n_clicks"),
      Input("ec-graph-btn", "n_clicks"),
      Input("temp-graph-btn", "n_clicks"),
-     Input("luft-graph-btn", "n_clicks")]
+     Input("luft-graph-btn", "n_clicks")],
+    prevent_initial_call=True
 )
 def update_graph(*args):
     ctx = callback_context
     if not ctx.triggered:
-        return {}
-    
+        return {}, {"display": "none"}
+
     button_id = ctx.triggered[0]["prop_id"].split(".")[0]
     times = [datetime.now().strftime("%H:%M") for _ in range(24)]
     values = [0] * 24
@@ -261,8 +272,8 @@ def update_graph(*args):
         title += "Temperatur"
     elif button_id == "luft-graph-btn":
         title += "Luftfeuchtigkeit"
-    
-    return {
+
+    fig = {
         "data": [{
             "x": times,
             "y": values,
@@ -286,3 +297,5 @@ def update_graph(*args):
             }
         }
     }
+
+    return fig, {"display": "block"}
