@@ -23,6 +23,7 @@ COLOR_SCHEME = {
     'graph_grid': '#e2e8f0',   # Hellgrau für Graphenraster
     'log_bg': '#e5e7eb',       # Leicht dunkleres Grau für Log/Kamera Bereiche
     'control_bg': '#e5e7eb',   # Leicht dunkleres Grau für Steuerungselemente
+    'transparent': 'rgba(0, 0, 0, 0)',  # komplett transparent
 }
 
 def admin_dashboard_layout():
@@ -39,42 +40,95 @@ def admin_dashboard_layout():
         dbc.CardBody([
             # Aktuelle Werte
             html.H4("Aktuelle Werte:", className="mb-3", style={"color": COLOR_SCHEME['text_primary']}),
+
             dbc.Row([
                 dbc.Col([
-                    html.Div([
-                        html.Strong("Füllstand: ", style={"color": COLOR_SCHEME['text_primary']}),
-                        html.Span(id="fuellstand-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="fuellstand-graph-btn", size="sm",
-                                 className="ms-2", color="primary")
-                    ],
-                    className="mb-2"),
-                    html.Div([
-                        html.Strong("PH: ", style={"color": COLOR_SCHEME['text_primary']}),
-                        html.Span(id="ph-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="ph-graph-btn", size="sm",
-                                 className="ms-2", color="primary")
-                    ],
-                    className="mb-2"),
-                    html.Div([
-                        html.Strong("EC: ", style={"color": COLOR_SCHEME['text_primary']}),
-                        html.Span(id="ec-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="ec-graph-btn", size="sm",
-                                 className="ms-2", color="primary")
-                    ],
-                    className="mb-2"),
-                    html.Div([
-                        html.Strong("Temp: ", style={"color": COLOR_SCHEME['text_primary']}),
-                        html.Span(id="temp-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="temp-graph-btn", size="sm",
-                                 className="ms-2", color="primary")
-                    ],
-                    className="mb-2"),
-                    html.Div([
-                        html.Strong("Luftfeuchtigkeit: ", style={"color": COLOR_SCHEME['text_primary']}),
-                        html.Span(id="luft-wert", children="-", style={"color": COLOR_SCHEME['accent']}),
-                        dbc.Button("Graph", id="luft-graph-btn", size="sm",
-                                 className="ms-2", color="primary")
-                    ], className="mb-2"),
+                    dbc.Card([
+                        dbc.Row([
+                            dbc.Col(
+                                html.Strong("Füllstand: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                width="auto"
+                            ),
+                            dbc.Col(
+                                html.Span("-", id="fuellstand-wert", style={"color": COLOR_SCHEME['accent']}),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                            dbc.Col(
+                                dbc.Button("Graph", id="fuellstand-graph-btn", size="sm", color="primary"),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                        ], align="center", className="mb-2"),
+
+                        dbc.Row([
+                            dbc.Col(
+                                html.Strong("PH: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                width="auto"
+                            ),
+                            dbc.Col(
+                                html.Span("-", id="ph-wert", style={"color": COLOR_SCHEME['accent']}),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                            dbc.Col(
+                                dbc.Button("Graph", id="ph-graph-btn", size="sm", color="primary"),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                        ], align="center", className="mb-2"),
+
+                        dbc.Row([
+                            dbc.Col(
+                                html.Strong("EC: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                width="auto"
+                            ),
+                            dbc.Col(
+                                html.Span("-", id="ec-wert", style={"color": COLOR_SCHEME['accent']}),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                            dbc.Col(
+                                dbc.Button("Graph", id="ec-graph-btn", size="sm", color="primary"),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                        ], align="center", className="mb-2"),
+
+                        dbc.Row([
+                            dbc.Col(
+                                html.Strong("Temp: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                width="auto"
+                            ),
+                            dbc.Col(
+                                html.Span("-", id="temp-wert", style={"color": COLOR_SCHEME['accent']}),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                            dbc.Col(
+                                dbc.Button("Graph", id="temp-graph-btn", size="sm", color="primary"),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                        ], align="center", className="mb-2"),
+
+                        dbc.Row([
+                            dbc.Col(
+                                html.Strong("Luftfeuchtigkeit: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                            dbc.Col(
+                                html.Span("-", id="luft-wert", style={"color": COLOR_SCHEME['accent']}),
+                                width="auto"
+                            ),
+                            dbc.Col(
+                                dbc.Button("Graph", id="luft-graph-btn", size="sm", color="primary"),
+                                className="d-flex justify-content-end",
+                                width=True,
+                            ),
+                        ], align="center", className="mb-2"),
+                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "23%", "border": "none"}),
                 ], md=6),
 
                 dbc.Col([
@@ -83,11 +137,12 @@ def admin_dashboard_layout():
                         id="graph-container",
                         style={"display": "none"}  # Anfangs versteckt
                     )
-                ], md=6)
-
+                ], md=6),
             ]),
 
-            html.Hr(style={"border-color": COLOR_SCHEME['border']}),
+
+
+        html.Hr(style={"border-color": COLOR_SCHEME['border']}),
 
             # Log und Kamera nebeneinander
             dbc.Row([
