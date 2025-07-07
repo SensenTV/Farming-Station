@@ -1,4 +1,5 @@
 from dash import html, Output, Input, dcc, callback, dash, callback_context
+from datetime import datetime, timedelta
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash.dependencies import State
@@ -339,6 +340,31 @@ def get_last_change(table_name):
     conn.close()
     return result[0] if result else "-"
 
+def get_data_from_db(table_name: str, value_column: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    now = datetime.now()
+    past_24h = now - timedelta(hours=24)
+
+    query = f"""
+        SELECT timestamp, {value_column}
+        FROM {table_name}
+        WHERE timestamp >= ?
+        ORDER BY timestamp
+    """
+
+    cursor.execute(query, (past_24h.strftime("%Y-%m-%d %H:%M:%S"),))
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Split in X and Y
+    times = [row[0] for row in rows]
+    values = [row[1] for row in rows]
+
+    return times, values
+
+
 # Werte schreiben
 def update_light_data(last_change=None, start_time=None, end_time=None):
     conn = sqlite3.connect(DB_PATH)
@@ -435,20 +461,31 @@ def update_graph(*args):
         return {}, {"display": "none"}
 
     button_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    times = [datetime.now().strftime("%H:%M") for _ in range(24)]
-    values = [0] * 24
+
+    now = datetime.now()
+    past_24h = now - timedelta(hours=24)
 
     title = "24h Verlauf: "
+    table = ""
+    column = ""
+
     if button_id == "fuellstand-graph-btn":
         title += "Füllstand"
+        table, column = "WaterLevel_Sensor", "value"
     elif button_id == "ph-graph-btn":
         title += "PH-Wert"
+        table, column = "PH_Sensor", "value"
     elif button_id == "ec-graph-btn":
         title += "EC-Wert"
+        table, column = "EC_Sensor", "value"
     elif button_id == "temp-graph-btn":
         title += "Temperatur"
+        table, column = "Temp_Sensor", "value"
     elif button_id == "luft-graph-btn":
         title += "Luftfeuchtigkeit"
+        table, column = "Humidity_Sensor", "value"
+
+    times, values = get_data_from_db(table, column)
 
     fig = {
         "data": [{
@@ -457,7 +494,8 @@ def update_graph(*args):
             "type": "scatter",
             "mode": "lines+markers",
             "line": {"color": COLOR_SCHEME['accent']},
-            "marker": {"color": COLOR_SCHEME['accent']}
+            "marker": {"color": COLOR_SCHEME['accent']},
+            "hovertemplate": "%{y} °C<br>%{x|%d.%m.%y %H:%M} Uhr<extra></extra>"
         }],
         "layout": {
             "title": {"text": title, "font": {"color": COLOR_SCHEME['text_primary']}},
@@ -465,14 +503,20 @@ def update_graph(*args):
             "plot_bgcolor": COLOR_SCHEME['card_bg'],
             "font": {"color": COLOR_SCHEME['text_primary']},
             "xaxis": {
+                "type": "date",
+                "range": [past_24h.isoformat(), now.isoformat()],  # expliziter Bereich
+                "tickformat": "%H:%M\n%d.%m",  # Stunden + Datum z. B.
                 "gridcolor": COLOR_SCHEME['graph_grid'],
-                "color": COLOR_SCHEME['text_primary']
+                "color": COLOR_SCHEME['text_primary'],
+                "title": "Zeit"
             },
             "yaxis": {
                 "gridcolor": COLOR_SCHEME['graph_grid'],
-                "color": COLOR_SCHEME['text_primary']
+                "color": COLOR_SCHEME['text_primary'],
+                "title": column
             }
         }
     }
 
     return fig, {"display": "block"}
+
