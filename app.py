@@ -3,6 +3,7 @@ import dash
 import dash_bootstrap_components as dbc
 import sqlite3
 import bcrypt
+import dash_mantine_components as dmc
 from pages.loginpage import login_layout  # Login-Oberfläche
 from pages.registerpage import register_layout  # Registrier-Oberfläche
 from authentification.auth import verify_user  # Funktion zur Passwortprüfung
@@ -14,11 +15,17 @@ app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheet
 app.title = "Farming Station"
 
 # Layout mit Platzhalter für dynamischen Seiteninhalt
-app.layout = dbc.Container([
-    dcc.Location(id='url', refresh=False),
-    dcc.Store(id='session-store', storage_type='session'),  # session = Tab/Browser geöffnet
-    html.Div(id='page-content'),
-], fluid=True)
+app.layout = dmc.MantineProvider(
+    withGlobalClasses=True,
+    withCssVariables=True,
+    children=[
+        dbc.Container([
+            dcc.Location(id='url', refresh=False),
+            dcc.Store(id='session-store', storage_type='session'),  # session = Tab/Browser geöffnet
+            html.Div(id='page-content'),
+        ], fluid=True)
+    ]
+)
 
 
 # Routing: Zeigt Login- oder Dashboard-Ansicht

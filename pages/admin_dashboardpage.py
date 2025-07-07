@@ -1,23 +1,14 @@
-import dash_bootstrap_components as dbc
 from dash import html, Output, Input, dcc, callback, dash, callback_context
+import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+from dash.dependencies import State
 import plotly.graph_objs as go
 from datetime import datetime
+import sqlite3
 import json
-from dash.dependencies import State
 import os
 
-# Funktion zum Laden der gespeicherten Zeitstempel
-def load_timestamps():
-    try:
-        with open('switch_timestamps.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"luefter": "-", "pumpe": "-"}
-
-# Funktion zum Speichern der Zeitstempel
-def save_timestamps(timestamps):
-    with open('switch_timestamps.json', 'w') as f:
-        json.dump(timestamps, f)
+DB_PATH = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLight\sensors.db"
 
 # Aktualisiertes Farbschema
 COLOR_SCHEME = {
@@ -36,7 +27,9 @@ COLOR_SCHEME = {
 
 def admin_dashboard_layout():
     # Lade gespeicherte Zeitstempel
-    timestamps = load_timestamps()
+    licht_data = get_light_data()
+    start_time = licht_data.get("start_time")
+    end_time = licht_data.get("end_time")
     
     system_card = dbc.Card([
         dbc.CardHeader(
@@ -139,6 +132,8 @@ def admin_dashboard_layout():
 
             # Steuerungselemente
             dbc.Row([
+
+                # Lüfter
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
@@ -146,7 +141,7 @@ def admin_dashboard_layout():
                                 dbc.Col(
                                     html.Span("Lüfter", style={
                                         "color": COLOR_SCHEME['text_primary'],
-                                        "font-weight": "500"
+                                        "font-weight": "500",
                                     }),
                                     className="d-flex align-items-center"
                                 ),
@@ -160,14 +155,67 @@ def admin_dashboard_layout():
                                 ),
                             ]),
                             html.Small(
-                                f"Last change: {timestamps['luefter']}",
+                                f"Last change: {get_last_change('Fan')}",
                                 id="luefter-last-change",
                                 className="d-block mt-2",
                                 style={"color": COLOR_SCHEME['text_secondary']}
                             )
-                        ])
-                    ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg']}),
-                ], md=6),
+                        ]),
+                    ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
+                ], md=4),
+
+                # Licht
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            dbc.Row([
+                                dbc.Col(
+                                    html.Span("Licht", style={
+                                        "color": COLOR_SCHEME['text_primary'],
+                                        "font-weight": "500",
+                                    }),
+                                    className="d-flex align-items-center"
+                                ),
+                                dbc.Col(
+                                    dbc.Switch(
+                                        id="licht-switch",
+                                        value=False,
+                                        className="float-end"
+                                    ),
+                                    className="d-flex justify-content-end"
+                                ),
+                            ]),
+
+                            # Zeiteinstellung
+                            html.Div([
+                                dbc.Label("Eingeschaltet von:", html_for="licht-start-time", className="me-2 mb-0", style={"color": COLOR_SCHEME['text_primary']}),
+                                dmc.TimeInput(
+                                    id="licht-start-time",
+                                    value=licht_data["start_time"],
+                                    placeholder="HH:mm",
+                                    className="me-2",
+                                    size="sm"
+                                ),
+                                dbc.Label("bis:", html_for="licht-end-time", className="me-2 mb-0", style={"color": COLOR_SCHEME['text_primary']}),
+                                dmc.TimeInput(
+                                    id="licht-end-time",
+                                    value=licht_data["end_time"],
+                                    placeholder="HH:mm",
+                                    className="me-2",
+                                    size="sm"
+                                ),
+                            ], className="d-flex align-items-center mt-2"),
+                            html.Small(
+                                f"Last change: {licht_data.get('last_change', '-')}",
+                                id="licht-last-change",
+                                className="d-block mt-2",
+                                style={"color": COLOR_SCHEME['text_secondary']}
+                            )
+                        ]),
+                    ],className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
+                ], md=4),
+
+                # Wasserpumpe
                 dbc.Col([
                     dbc.Card([
                         dbc.CardBody([
@@ -175,7 +223,7 @@ def admin_dashboard_layout():
                                 dbc.Col(
                                     html.Span("Wasserpumpe", style={
                                         "color": COLOR_SCHEME['text_primary'],
-                                        "font-weight": "500"
+                                        "font-weight": "500",
                                     }),
                                     className="d-flex align-items-center"
                                 ),
@@ -189,14 +237,14 @@ def admin_dashboard_layout():
                                 ),
                             ]),
                             html.Small(
-                                f"Last change: {timestamps['pumpe']}",
+                                f"Last change: {get_last_change('Pump')}",
                                 id="pumpe-last-change",
                                 className="d-block mt-2",
                                 style={"color": COLOR_SCHEME['text_secondary']}
                             )
                         ])
-                    ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg']}),
-                ], md=6),
+                    ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
+                ], md=4),
             ]),
         ], style={"background-color": COLOR_SCHEME['card_bg']})
     ], className="shadow-sm")
@@ -208,37 +256,111 @@ def admin_dashboard_layout():
         fluid=True,
         style={"background-color": COLOR_SCHEME['background']}
     )
+# Werte lesen
+def get_light_data():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT last_change, start_time, end_time FROM Light LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return {
+            "last_change": result[0],
+            "start_time": result[1],
+            "end_time": result[2]
+        }
+    else:
+        return {
+            "last_change": "-",
+            "start_time": "06:00",
+            "end_time": "22:00"
+        }
+
+def get_last_change(table_name):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT last_change FROM {table_name} LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else "-"
+
+# Werte schreiben
+def update_light_data(last_change=None, start_time=None, end_time=None):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Existiert schon ein Eintrag?
+    cursor.execute("SELECT COUNT(*) FROM Light")
+    exists = cursor.fetchone()[0] > 0
+
+    if exists:
+        if last_change is not None:
+            cursor.execute("UPDATE Light SET last_change = ?", (last_change,))
+        if start_time is not None:
+            cursor.execute("UPDATE Light SET start_time = ?", (start_time,))
+        if end_time is not None:
+            cursor.execute("UPDATE Light SET end_time = ?", (end_time,))
+    else:
+        # Fallback-Eintrag
+        cursor.execute("INSERT INTO Light (last_change, start_time, end_time) VALUES (?, ?, ?)", (
+            last_change or "-", start_time or "06:00", end_time or "22:00"
+        ))
+
+    conn.commit()
+    conn.close()
+
+def update_last_change(table_name, value):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+    exists = cursor.fetchone()[0] > 0
+
+    if exists:
+        cursor.execute(f"UPDATE {table_name} SET last_change = ?", (value,))
+    else:
+        cursor.execute(f"INSERT INTO {table_name} (last_change) VALUES (?)", (value,))
+
+    conn.commit()
+    conn.close()
+
 
 # Neue Callbacks für die Zeitstempel-Aktualisierung
 @callback(
     [Output("luefter-last-change", "children"),
-     Output("pumpe-last-change", "children")],
+     Output("pumpe-last-change", "children"),
+     Output("licht-last-change", "children")],
     [Input("luefter-switch", "value"),
-     Input("pumpe-switch", "value")]
+     Input("pumpe-switch", "value"),
+     Input("licht-start-time", "value"),
+     Input("licht-end-time", "value"),
+     Input("licht-switch", "value")]
 )
-def update_timestamps(luefter_value, pumpe_value):
+def update_timestamps(luefter_value, pumpe_value, start_time, end_time, licht_switch):
     ctx = callback_context
-    if not ctx.triggered:
-        timestamps = load_timestamps()
-        return [
-            f"Last change: {timestamps['luefter']}",
-            f"Last change: {timestamps['pumpe']}"
-        ]
-
-    timestamps = load_timestamps()
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    if ctx.triggered[0]["prop_id"].split(".")[0] == "luefter-switch":
-        timestamps["luefter"] = current_time
-    elif ctx.triggered[0]["prop_id"].split(".")[0] == "pumpe-switch":
-        timestamps["pumpe"] = current_time
-    
-    save_timestamps(timestamps)
-    
+
+    if ctx.triggered:
+        trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        if trigger_id == "luefter-switch":
+            update_last_change("Fan", current_time)
+
+        elif trigger_id == "pumpe-switch":
+            update_last_change("Pump", current_time)
+
+        elif trigger_id in ["licht-start-time", "licht-end-time", "licht-switch"]:
+            update_light_data(
+                last_change=current_time,
+                start_time=start_time if trigger_id == "licht-start-time" else None,
+                end_time=end_time if trigger_id == "licht-end-time" else None
+            )
+
     return [
-        f"Last change: {timestamps['luefter']}",
-        f"Last change: {timestamps['pumpe']}"
+        f"Last change: {get_last_change('Fan')}",
+        f"Last change: {get_last_change('Pump')}",
+        f"Last change: {get_light_data().get('last_change', '-')}",
     ]
+
 
 # Die Callbacks bleiben gleich, aber update_graph wird angepasst:
 

@@ -499,7 +499,7 @@
     </routine>
     <schema id="191" parent="1" name="main">
       <Current>1</Current>
-      <LastIntrospectionLocalTimestamp>2025-07-07.07:30:48</LastIntrospectionLocalTimestamp>
+      <LastIntrospectionLocalTimestamp>2025-07-07.10:16:18</LastIntrospectionLocalTimestamp>
     </schema>
     <argument id="192" parent="16">
       <ArgumentDirection>R</ArgumentDirection>
@@ -1591,139 +1591,192 @@
       <Position>1</Position>
     </argument>
     <table id="555" parent="191" name="EC_Sensor"/>
-    <table id="556" parent="191" name="FlowRate_Sensor"/>
-    <table id="557" parent="191" name="Humidity_Sensor"/>
-    <table id="558" parent="191" name="PH_Sensor"/>
-    <table id="559" parent="191" name="Temp_Sensor"/>
-    <table id="560" parent="191" name="Ultrasonic_Sensor"/>
-    <table id="561" parent="191" name="sqlite_master">
+    <table id="556" parent="191" name="Fan"/>
+    <table id="557" parent="191" name="FlowRate_Sensor"/>
+    <table id="558" parent="191" name="Humidity_Sensor"/>
+    <table id="559" parent="191" name="Light"/>
+    <table id="560" parent="191" name="PH_Sensor"/>
+    <table id="561" parent="191" name="Pump"/>
+    <table id="562" parent="191" name="Temp_Sensor"/>
+    <table id="563" parent="191" name="Ultrasonic_Sensor"/>
+    <table id="564" parent="191" name="sqlite_master">
       <System>1</System>
     </table>
-    <column id="562" parent="555" name="value">
+    <column id="565" parent="555" name="value">
       <Position>1</Position>
       <StoredType>FLOAT|0s</StoredType>
     </column>
-    <column id="563" parent="555" name="timestamp">
+    <column id="566" parent="555" name="timestamp">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="564" parent="555" name="sqlite_autoindex_EC_Sensor_1">
+    <index id="567" parent="555" name="sqlite_autoindex_EC_Sensor_1">
       <ColNames>value</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="565" parent="555">
+    <key id="568" parent="555">
       <ColNames>value</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_EC_Sensor_1</UnderlyingIndexName>
     </key>
-    <column id="566" parent="556" name="value">
+    <column id="569" parent="556" name="last_change">
+      <Position>1</Position>
+      <StoredType>TEXT|0s</StoredType>
+    </column>
+    <index id="570" parent="556" name="sqlite_autoindex_Fan_1">
+      <ColNames>last_change</ColNames>
+      <NameSurrogate>1</NameSurrogate>
+      <Unique>1</Unique>
+    </index>
+    <key id="571" parent="556">
+      <ColNames>last_change</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>sqlite_autoindex_Fan_1</UnderlyingIndexName>
+    </key>
+    <column id="572" parent="557" name="value">
       <Position>1</Position>
       <StoredType>FLOAT|0s</StoredType>
     </column>
-    <column id="567" parent="556" name="timestamp">
+    <column id="573" parent="557" name="timestamp">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="568" parent="556" name="sqlite_autoindex_FlowRate_Sensor_1">
+    <index id="574" parent="557" name="sqlite_autoindex_FlowRate_Sensor_1">
       <ColNames>value</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="569" parent="556">
+    <key id="575" parent="557">
       <ColNames>value</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_FlowRate_Sensor_1</UnderlyingIndexName>
     </key>
-    <column id="570" parent="557" name="value">
+    <column id="576" parent="558" name="value">
       <Position>1</Position>
       <StoredType>FLOAT|0s</StoredType>
     </column>
-    <column id="571" parent="557" name="timestamp">
+    <column id="577" parent="558" name="timestamp">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="572" parent="557" name="sqlite_autoindex_Humidity_Sensor_1">
+    <index id="578" parent="558" name="sqlite_autoindex_Humidity_Sensor_1">
       <ColNames>value</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="573" parent="557">
+    <key id="579" parent="558">
       <ColNames>value</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_Humidity_Sensor_1</UnderlyingIndexName>
     </key>
-    <column id="574" parent="558" name="value">
+    <column id="580" parent="559" name="last_change">
       <Position>1</Position>
-      <StoredType>FLOAT|0s</StoredType>
+      <StoredType>Text|0s</StoredType>
     </column>
-    <column id="575" parent="558" name="timestamp">
+    <column id="581" parent="559" name="start_time">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="576" parent="558" name="sqlite_autoindex_PH_Sensor_1">
+    <column id="582" parent="559" name="end_time">
+      <Position>3</Position>
+      <StoredType>Text|0s</StoredType>
+    </column>
+    <index id="583" parent="559" name="sqlite_autoindex_Light_1">
+      <ColNames>last_change</ColNames>
+      <NameSurrogate>1</NameSurrogate>
+      <Unique>1</Unique>
+    </index>
+    <key id="584" parent="559">
+      <ColNames>last_change</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>sqlite_autoindex_Light_1</UnderlyingIndexName>
+    </key>
+    <column id="585" parent="560" name="value">
+      <Position>1</Position>
+      <StoredType>FLOAT|0s</StoredType>
+    </column>
+    <column id="586" parent="560" name="timestamp">
+      <Position>2</Position>
+      <StoredType>TEXT|0s</StoredType>
+    </column>
+    <index id="587" parent="560" name="sqlite_autoindex_PH_Sensor_1">
       <ColNames>value</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="577" parent="558">
+    <key id="588" parent="560">
       <ColNames>value</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_PH_Sensor_1</UnderlyingIndexName>
     </key>
-    <column id="578" parent="559" name="value">
+    <column id="589" parent="561" name="last_change">
+      <Position>1</Position>
+      <StoredType>TEXT|0s</StoredType>
+    </column>
+    <index id="590" parent="561" name="sqlite_autoindex_Pump_1">
+      <ColNames>last_change</ColNames>
+      <NameSurrogate>1</NameSurrogate>
+      <Unique>1</Unique>
+    </index>
+    <key id="591" parent="561">
+      <ColNames>last_change</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>sqlite_autoindex_Pump_1</UnderlyingIndexName>
+    </key>
+    <column id="592" parent="562" name="value">
       <Position>1</Position>
       <StoredType>FLOAT|0s</StoredType>
     </column>
-    <column id="579" parent="559" name="timestamp">
+    <column id="593" parent="562" name="timestamp">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="580" parent="559" name="sqlite_autoindex_Temp_Sensor_1">
+    <index id="594" parent="562" name="sqlite_autoindex_Temp_Sensor_1">
       <ColNames>value</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="581" parent="559">
+    <key id="595" parent="562">
       <ColNames>value</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_Temp_Sensor_1</UnderlyingIndexName>
     </key>
-    <column id="582" parent="560" name="value">
+    <column id="596" parent="563" name="value">
       <Position>1</Position>
       <StoredType>FLOAT|0s</StoredType>
     </column>
-    <column id="583" parent="560" name="timestamp">
+    <column id="597" parent="563" name="timestamp">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <index id="584" parent="560" name="sqlite_autoindex_Ultrasonic_Sensor_1">
+    <index id="598" parent="563" name="sqlite_autoindex_Ultrasonic_Sensor_1">
       <ColNames>value</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <Unique>1</Unique>
     </index>
-    <key id="585" parent="560">
+    <key id="599" parent="563">
       <ColNames>value</ColNames>
       <Primary>1</Primary>
       <UnderlyingIndexName>sqlite_autoindex_Ultrasonic_Sensor_1</UnderlyingIndexName>
     </key>
-    <column id="586" parent="561" name="type">
+    <column id="600" parent="564" name="type">
       <Position>1</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <column id="587" parent="561" name="name">
+    <column id="601" parent="564" name="name">
       <Position>2</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <column id="588" parent="561" name="tbl_name">
+    <column id="602" parent="564" name="tbl_name">
       <Position>3</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
-    <column id="589" parent="561" name="rootpage">
+    <column id="603" parent="564" name="rootpage">
       <Position>4</Position>
       <StoredType>INT|0s</StoredType>
     </column>
-    <column id="590" parent="561" name="sql">
+    <column id="604" parent="564" name="sql">
       <Position>5</Position>
       <StoredType>TEXT|0s</StoredType>
     </column>
