@@ -52,7 +52,7 @@ def admin_dashboard_layout():
                             ),
                             dbc.Col(
                                 html.Span("-", id="fuellstand-wert", style={"color": COLOR_SCHEME['accent']}),
-                                className="d-flex justify-content-end",
+                                className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
@@ -69,7 +69,7 @@ def admin_dashboard_layout():
                             ),
                             dbc.Col(
                                 html.Span("-", id="ph-wert", style={"color": COLOR_SCHEME['accent']}),
-                                className="d-flex justify-content-end",
+                                className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
@@ -86,7 +86,7 @@ def admin_dashboard_layout():
                             ),
                             dbc.Col(
                                 html.Span("-", id="ec-wert", style={"color": COLOR_SCHEME['accent']}),
-                                className="d-flex justify-content-end",
+                                className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
@@ -103,7 +103,7 @@ def admin_dashboard_layout():
                             ),
                             dbc.Col(
                                 html.Span("-", id="temp-wert", style={"color": COLOR_SCHEME['accent']}),
-                                className="d-flex justify-content-end",
+                                className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
@@ -116,11 +116,11 @@ def admin_dashboard_layout():
                         dbc.Row([
                             dbc.Col(
                                 html.Strong("Luftfeuchtigkeit: ", style={"color": COLOR_SCHEME['text_primary']}),
-                                className="d-flex justify-content-end",
-                                width=True,
+                                width="auto"
                             ),
                             dbc.Col(
                                 html.Span("-", id="luft-wert", style={"color": COLOR_SCHEME['accent']}),
+                                className="d-flex justify-content-left",
                                 width="auto"
                             ),
                             dbc.Col(
@@ -129,7 +129,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                         ], align="center", className="mb-2"),
-                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "23%", "border": "none"}),
+                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "27%", "border": "none"}),
                 ], md=6),
 
                 dbc.Col([
@@ -139,6 +139,7 @@ def admin_dashboard_layout():
                         style={"display": "none"}  # Anfangs versteckt
                     )
                 ], md=6),
+                dcc.Interval(id='werte-refresh', interval=5000, n_intervals=0)
             ]),
 
 
@@ -519,4 +520,40 @@ def update_graph(*args):
     }
 
     return fig, {"display": "block"}
+
+def lade_aktuelle_werte():
+    tabellen = ["WaterLevel_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]
+    werte = {}
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    for table in tabellen:
+        cursor.execute(f"SELECT live_value FROM {table} LIMIT 1")
+        result = cursor.fetchone()
+        werte[table] = result[0] if result else "-"
+
+    conn.close()
+    return werte
+
+@callback(
+    [
+        Output("fuellstand-wert", "children"),
+        Output("ph-wert", "children"),
+        Output("ec-wert", "children"),
+        Output("temp-wert", "children"),
+        Output("luft-wert", "children"),
+    ],
+    Input("werte-refresh", "n_intervals")
+)
+def update_sensorwerte(n):
+    werte = lade_aktuelle_werte()
+    return (
+        f"{werte['WaterLevel_Sensor']}%",
+        f"{werte['PH_Sensor']}",
+        f"{werte['EC_Sensor']} mS/cm",
+        f"{werte['Temp_Sensor']} °C",
+        f"{werte['Humidity_Sensor']} %",
+    )
+
 
