@@ -134,9 +134,20 @@ def admin_dashboard_layout():
 
                 dbc.Col([
                     html.Div(
-                        dcc.Graph(id="sensor-graph", style={"height": "300px"}),
+                        dcc.Graph(
+                            id="sensor-graph",
+                            style={"height": "300px"},
+                            config = {
+                                "displayModeBar": True,
+                                "modeBarButtonsToRemove": [
+                                    "zoom2d", "select2d", "lasso2d",
+                                    "autoscale2d"
+                                ],
+                                "displaylogo": False
+                            }
+                        ),
                         id="graph-container",
-                        style={"display": "none"}  # Anfangs versteckt
+                        style={"display": "none"}
                     )
                 ], md=6),
                 dcc.Interval(id='werte-refresh', interval=5000, n_intervals=0)
@@ -520,6 +531,7 @@ def update_graph(*args):
     }
 
     return fig, {"display": "block"}
+
 
 def lade_aktuelle_werte():
     tabellen = ["WaterLevel_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]
