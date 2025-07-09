@@ -9,7 +9,7 @@ import sqlite3
 import json
 import os
 
-DB_PATH = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLight\sensors.db"
+DB_PATH = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLite\sensors.db"
 
 # Aktualisiertes Farbschema
 COLOR_SCHEME = {
@@ -129,7 +129,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                         ], align="center", className="mb-2"),
-                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "27%", "border": "none"}),
+                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "35%", "border": "none"}),
                 ], md=6),
 
                 dbc.Col([

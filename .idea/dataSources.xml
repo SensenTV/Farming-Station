@@ -5,14 +5,14 @@
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/SQLight/users.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/SQLite/users.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
     <data-source source="LOCAL" name="sensors.db" uuid="b531c5ea-5c97-4136-b93c-6acbc1f1c953">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\steve\PycharmProjects\Farming-Station\SQLight\sensors.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\steve\PycharmProjects\Farming-Station\SQLite\sensors.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

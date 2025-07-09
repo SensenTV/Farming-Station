@@ -108,7 +108,7 @@ def handle_register(register_clicks, username, password, confirm_password):
     hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     try:
-        conn = sqlite3.connect('SQLight/users.db')
+        conn = sqlite3.connect('SQLite/users.db')
         cursor = conn.cursor()
         cursor.execute("INSERT INTO user (username, password) VALUES (?, ?)", (username, hashed_pw))
         conn.commit()

@@ -2,7 +2,7 @@ import sqlite3
 import bcrypt
 
 def verify_user(username, password):
-    conn = sqlite3.connect('SQLight/users.db')
+    conn = sqlite3.connect('SQLite/users.db')
     cursor = conn.cursor()
     cursor.execute("SELECT password, role FROM user WHERE username = ?", (username,))
     result = cursor.fetchone()
