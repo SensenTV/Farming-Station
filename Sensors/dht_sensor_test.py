@@ -5,6 +5,7 @@ import board
 import adafruit_dht
 
 # DHT11 Temperature and Humidity Sensor
+# Verbunden an GPIO 4, Pin 7
 # Initial the dht device, with data pin connected to:
 dhtDevice = adafruit_dht.DHT11(board.D4)
 

@@ -1,4 +1,3 @@
-from Bluetin_Echo import Echo
 import board
 import time
 import adafruit_hcsr04

@@ -2,6 +2,7 @@ import time
 import Adafruit_ADS1x15
 
 # Water Sensor
+# Verbunden an ADS Channel 3
 # Initial the Device
 ADC = Adafruit_ADS1x15.ADS1115(busnum= 1)
 ADC_CHANNEL = 3
