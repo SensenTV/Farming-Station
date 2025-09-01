@@ -1,10 +1,11 @@
-from dash import html, Output, Input, dcc, callback, dash, callback_context
+from dash import html, Output, Input, dcc, callback, dash, callback_context, ctx
 from datetime import datetime, timedelta
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash.dependencies import State
 import plotly.graph_objs as go
 from datetime import datetime
+import pandas as pd
 import sqlite3
 import json
 import os
@@ -153,6 +154,69 @@ def admin_dashboard_layout():
                 dcc.Interval(id='werte-refresh', interval=5000, n_intervals=0)
             ]),
 
+                        dbc.Card([
+                            dbc.CardBody([
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            dbc.DropdownMenu(
+                                                [
+                                                    dbc.DropdownMenuItem("Füllstand",
+                                                                         id="water_level_sensor_dropdown_button",
+                                                                         n_clicks=0),
+                                                    dbc.DropdownMenuItem("PH", id="ph_sensor_dropdown_button", n_clicks=0),
+                                                    dbc.DropdownMenuItem("EC", id="ec_sensor_dropdown_button", n_clicks=0),
+                                                    dbc.DropdownMenuItem("Temp", id="temp_sensor_dropdown_button",
+                                                                         n_clicks=0),
+                                                    dbc.DropdownMenuItem("Luftfeuchtigkeit",
+                                                                         id="humidity_sensor_dropdown_button", n_clicks=0),
+                                                    dbc.DropdownMenuItem("Alle Sensoren", id="all_sensor_dropdown_button",
+                                                                         n_clicks=0),
+                                                ],
+                                                label="Sensoren auswählen",
+                                                id="sensor_dropdown",
+                                                className="me-2",  # kleiner Abstand rechts
+                                            ),
+                                            width="auto",
+                                        ),
+                                        dbc.Col(
+                                            html.P("über die letzten",
+                                                  style={"color": COLOR_SCHEME['text_primary'], "margin": "0"}),
+                                             width="auto",
+                                            className="d-flex align-items-center",  # vertikal mittig
+                                        ),
+                                        dbc.Col(
+                                            html.Div([
+                                                dbc.Input(type="number",min=0,max=365, step=1, id="number" ),
+                                                dbc.Tooltip(
+                                                    "Geben Sie eine Nummer zwischen 0-365",
+                                                    target="number",
+                                                    placement="bottom",
+                                                )
+                                            ]),
+                                            width="auto",
+                                        ),
+                                        dbc.Col(
+                                            dbc.DropdownMenu([
+                                                dbc.DropdownMenuItem("Stunden", id="hour_dropdown_button", n_clicks=0),
+                                                dbc.DropdownMenuItem("Tage", id="days_dropdown_button", n_clicks=0),
+                                            ],
+                                                label="Zeiteinheit",
+                                                id="time_dropdown",
+                                                className="me-2",
+                                            ),
+                                            width="auto",
+                                        ),
+                                        dbc.Col([
+                                            dbc.Button("Herunterladen", id="download_button", n_clicks=0),
+                                            dcc.Download(id="download")
+                                        ], width="auto")
+                                    ],
+                                    className="g-1",
+                                    align="center",
+                                )
+                            ])
+                        ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "39%"}),
 
 
         html.Hr(style={"border-color": COLOR_SCHEME['border']}),
@@ -314,7 +378,7 @@ def admin_dashboard_layout():
                     ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
                 ], md=4),
             ]),
-        ], style={"background-color": COLOR_SCHEME['card_bg']})
+        ], style={"background-color": COLOR_SCHEME['card_bg']}),
     ], className="shadow-sm")
 
     return dbc.Container(
@@ -568,4 +632,144 @@ def update_sensorwerte(n):
         f"{werte['Humidity_Sensor']} %",
     )
 
+@callback(
+Output("sensor_dropdown", "label"),
+    Input("water_level_sensor_dropdown_button", "n_clicks"),
+    Input("ph_sensor_dropdown_button", "n_clicks"),
+    Input("ec_sensor_dropdown_button", "n_clicks"),
+    Input("temp_sensor_dropdown_button", "n_clicks"),
+    Input("humidity_sensor_dropdown_button", "n_clicks"),
+    Input("all_sensor_dropdown_button", "n_clicks")
+)
+def update_sensor_dropdown_label(n1, n2, n3, n4, n5, n6):
+    if not ctx.triggered_id:
+        return "Sensoren auswählen",
+
+    mapping = {
+        "water_level_sensor_dropdown_button": "Füllstand",
+        "ph_sensor_dropdown_button": "PH",
+        "ec_sensor_dropdown_button": "EC",
+        "temp_sensor_dropdown_button": "Temp",
+        "humidity_sensor_dropdown_button": "Luftfeuchtigkeit",
+        "all_sensor_dropdown_button": "Alle Sensoren",
+    }
+
+    label = mapping.get(ctx.triggered_id, "Sensoren auswählen")
+    return label
+
+@callback(
+    Output("time_dropdown", "label"),
+    Input("hour_dropdown_button", "n_clicks"),
+    Input("days_dropdown_button", "n_clicks"),
+)
+def update_time_dropdown_label(n1, n2):
+    if not ctx.triggered_id:
+        return "Zeiteinheit auswählen"
+
+    mapping = {
+        "hour_dropdown_button": "Stunden",
+        "days_dropdown_button": "Tage",
+    }
+
+    return mapping.get(ctx.triggered_id, "Zeiteinheit auswählen")
+
+
+# ------------------------------
+# Funktion: Sensor-Daten aus SQLite laden
+# ------------------------------
+def get_sensor_data(sensor_label, number_value, time_unit):
+    """
+    Lädt Daten aus SQLite basierend auf Sensor, Anzahl und Zeiteinheit.
+
+    Parameter:
+    - sensor_label: Name des Sensors (z.B. "Füllstand")
+    - number_value: Anzahl der Zeiteinheiten
+    - time_unit: "Stunden" oder "Tage"
+
+    Rückgabe:
+    - pandas DataFrame mit Spalten: value, timestamp
+    """
+    # Mapping Dropdown-Label → Tabellenname in der DB
+    table_mapping = {
+        "Füllstand": "WaterLevel_Sensor",
+        "PH": "PH_Sensor",
+        "EC": "EC_Sensor",
+        "Temp": "Temp_Sensor",
+        "Luftfeuchtigkeit": "Humidity_Sensor",
+        "Alle Sensoren": None
+    }
+
+    table_name = table_mapping.get(sensor_label)
+    db_path = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLite\sensors.db"
+    conn = sqlite3.connect(db_path)
+
+    # ------------------------------
+    # Berechne Zeitgrenze für Filterung
+    # ------------------------------
+    now = datetime.now()
+    if time_unit.lower().startswith("stunde"):
+        time_limit = now - timedelta(hours=number_value)
+    else:  # Tage
+        time_limit = now - timedelta(days=number_value)
+    time_limit_str = time_limit.strftime("%Y-%m-%d %H:%M:%S")
+
+    # ------------------------------
+    # Daten abfragen
+    # ------------------------------
+    if table_name:  # Einzelner Sensor
+        query = f"""
+            SELECT value, timestamp
+            FROM {table_name}
+            WHERE timestamp >= ?
+            ORDER BY timestamp DESC
+        """
+        df = pd.read_sql_query(query, conn, params=(time_limit_str,))
+    else:  # Alle Sensoren
+        dfs = []
+        for tname in ["WaterLevel_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]:
+            q = f"""
+                SELECT value, timestamp
+                FROM {tname}
+                WHERE timestamp >= ?
+                ORDER BY timestamp DESC
+            """
+            dfs.append(pd.read_sql_query(q, conn, params=(time_limit_str,)))
+        df = pd.concat(dfs, ignore_index=True)
+
+    conn.close()
+    return df
+
+
+# ------------------------------
+# Callback: CSV-Download generieren
+# ------------------------------
+@callback(
+    Output("download", "data"),
+    Input("download_button", "n_clicks"),
+    State("sensor_dropdown", "label"),
+    State("number", "value"),
+    State("time_dropdown", "label"),
+    prevent_initial_call=True
+)
+def download_sensor_data(n_clicks, sensor_label, number_value, time_unit):
+    """
+    Generiert eine CSV-Datei zum Download basierend auf den ausgewählten Sensoren,
+    der Anzahl der Zeiteinheiten und der Zeiteinheit (Stunden/Tage).
+    """
+    # ------------------------------
+    # Prüfen, ob alle Inputs gesetzt sind
+    # ------------------------------
+    if not sensor_label or number_value is None or not time_unit:
+        return None
+
+    # ------------------------------
+    # Daten abrufen
+    # ------------------------------
+    df = get_sensor_data(sensor_label, number_value, time_unit)
+
+    # ------------------------------
+    # CSV zum Download zurückgeben
+    # ------------------------------
+    filename = f"{sensor_label}_{number_value}_{time_unit}.csv"
+    return dcc.send_data_frame(df.to_csv, filename, index=False)
 
