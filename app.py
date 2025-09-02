@@ -9,6 +9,8 @@ from pages.registerpage import register_layout  # Registrier-Oberfläche
 from authentification.auth import verify_user  # Funktion zur Passwortprüfung
 from pages.user_dashboardpage import user_dashboard_layout
 from pages.admin_dashboardpage import admin_dashboard_layout
+from apscheduler.schedulers.background import BackgroundScheduler
+from SQLite import data_deletion
 
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.CYBORG])
@@ -23,7 +25,10 @@ app.layout = dmc.MantineProvider(
             dcc.Location(id='url', refresh=False),
             dcc.Store(id='session-store', storage_type='session'),  # session = Tab/Browser geöffnet
             html.Div(id='page-content'),
-        ], fluid=True)
+        ], fluid=True),
+        html.Div([
+            html.Meta(name='viewport', content='width=device-width, initial-scale=1.0, shrink-to-fit=yes'),
+        ]),
     ]
 )
 
@@ -127,5 +132,10 @@ def handle_register(register_clicks, username, password, confirm_password):
 def logout(n_clicks):
     return {}, '/'
 
+scheduler = BackgroundScheduler()
+# Methode ohne () übergeben!
+scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
+scheduler.start()
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=8050)

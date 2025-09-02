@@ -57,7 +57,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="fuellstand-graph-btn", size="sm", color="primary"),
+                                dbc.Button("Graph", id="fuellstand-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -74,7 +74,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="ph-graph-btn", size="sm", color="primary"),
+                                dbc.Button("Graph", id="ph-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -91,7 +91,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="ec-graph-btn", size="sm", color="primary"),
+                                dbc.Button("Graph", id="ec-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -108,7 +108,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="temp-graph-btn", size="sm", color="primary"),
+                                dbc.Button("Graph", id="temp-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -125,13 +125,13 @@ def admin_dashboard_layout():
                                 width="auto"
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="luft-graph-btn", size="sm", color="primary"),
+                                dbc.Button("Graph", id="luft-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
                         ], align="center", className="mb-2"),
-                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "35%", "border": "none"}),
-                ], md=6),
+                    ], style={"background-color": COLOR_SCHEME['transparent'], "width":"auto", "border": "none"}),
+                ], md=2),
 
                 dbc.Col([
                     html.Div(
@@ -148,9 +148,10 @@ def admin_dashboard_layout():
                             }
                         ),
                         id="graph-container",
-                        style={"display": "none"}
+                        style={"display": "none"},
+                        className="my-3 p-2",
                     )
-                ], md=6),
+                ], md=10),
                 dcc.Interval(id='werte-refresh', interval=5000, n_intervals=0)
             ]),
 
@@ -216,10 +217,10 @@ def admin_dashboard_layout():
                                     align="center",
                                 )
                             ])
-                        ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "39%"}),
+                        ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "auto%"}),
 
 
-        html.Hr(style={"border-color": COLOR_SCHEME['border']}),
+            html.Hr(style={"border-color": COLOR_SCHEME['border']}),
 
             # Log und Kamera nebeneinander
             dbc.Row([
@@ -336,6 +337,24 @@ def admin_dashboard_layout():
                                     className="me-2",
                                     size="sm"
                                 ),
+                                dbc.Label("sowie von:", html_for="second-licht-start-time", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dmc.TimeInput(
+                                    id="second-licht-start-time",
+                                    value=licht_data["second_start_time"],
+                                    placeholder="HH:mm",
+                                    className="me-2",
+                                    size="sm"
+                                ),
+                                dbc.Label("bis:", html_for="second-licht-end-time", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dmc.TimeInput(
+                                    id="second-licht-end-time",
+                                    value=licht_data["second_end_time"],
+                                    placeholder="HH:mm",
+                                    className="me-2",
+                                    size="sm"
+                                ),
                             ], className="d-flex align-items-center mt-2"),
                             html.Small(
                                 f"Last change: {licht_data.get('last_change', '-')}",
@@ -392,20 +411,24 @@ def admin_dashboard_layout():
 def get_light_data():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT last_change, start_time, end_time FROM Light LIMIT 1")
-    result = cursor.fetchone()
+    cursor.execute("SELECT last_change, start_time, end_time FROM Light LIMIT 2")
+    result = cursor.fetchall()
     conn.close()
     if result:
         return {
-            "last_change": result[0],
-            "start_time": result[1],
-            "end_time": result[2]
+            "last_change": result[0][0],
+            "start_time": result[0][1],
+            "end_time": result[0][2],
+            "second_start_time": result[1][1],
+            "second_end_time": result[1][2],
         }
     else:
         return {
             "last_change": "-",
             "start_time": "06:00",
-            "end_time": "22:00"
+            "end_time": "22:00",
+            "second_start_time": "00:00",
+            "second_end_time": "05:00",
         }
 
 def get_last_change(table_name):
@@ -442,25 +465,29 @@ def get_data_from_db(table_name: str, value_column: str):
 
 
 # Werte schreiben
-def update_light_data(last_change=None, start_time=None, end_time=None):
+def update_light_data(last_change=None, start_time=None, end_time=None, second_start_time=None, second_end_time=None):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Existiert schon ein Eintrag?
     cursor.execute("SELECT COUNT(*) FROM Light")
-    exists = cursor.fetchone()[0] > 0
+    exists = cursor.fetchall()[0]
 
     if exists:
         if last_change is not None:
-            cursor.execute("UPDATE Light SET last_change = ?", (last_change,))
+            cursor.execute("UPDATE Light SET last_change = ? WHERE ROWID = 1", (last_change,))
         if start_time is not None:
-            cursor.execute("UPDATE Light SET start_time = ?", (start_time,))
+            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 1", (start_time,))
         if end_time is not None:
-            cursor.execute("UPDATE Light SET end_time = ?", (end_time,))
+            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 1", (end_time,))
+        if second_start_time is not None:
+            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 2", (second_start_time,))
+        if second_end_time is not None:
+            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 2", (second_end_time,))
     else:
         # Fallback-Eintrag
         cursor.execute("INSERT INTO Light (last_change, start_time, end_time) VALUES (?, ?, ?)", (
-            last_change or "-", start_time or "06:00", end_time or "22:00"
+            last_change or "-", start_time or "06:00", end_time or "22:00", start_time or "00:00", end_time or "05:00",
         ))
 
     conn.commit()
@@ -490,9 +517,11 @@ def update_last_change(table_name, value):
      Input("pumpe-switch", "value"),
      Input("licht-start-time", "value"),
      Input("licht-end-time", "value"),
-     Input("licht-switch", "value")]
+     Input("licht-switch", "value"),
+     Input("second-licht-start-time", "value"),
+     Input("second-licht-end-time", "value"),]
 )
-def update_timestamps(luefter_value, pumpe_value, start_time, end_time, licht_switch):
+def update_timestamps(luefter_value, pumpe_value, start_time, end_time, licht_switch, second_start, second_end,):
     ctx = callback_context
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -505,11 +534,13 @@ def update_timestamps(luefter_value, pumpe_value, start_time, end_time, licht_sw
         elif trigger_id == "pumpe-switch":
             update_last_change("Pump", current_time)
 
-        elif trigger_id in ["licht-start-time", "licht-end-time", "licht-switch"]:
+        elif trigger_id in ["licht-start-time", "licht-end-time", "licht-switch", "second-licht-start-time", "second-licht-end-time"]:
             update_light_data(
                 last_change=current_time,
                 start_time=start_time if trigger_id == "licht-start-time" else None,
-                end_time=end_time if trigger_id == "licht-end-time" else None
+                end_time=end_time if trigger_id == "licht-end-time" else None,
+                second_start_time=second_start if trigger_id == "second-licht-start-time" else None,
+                second_end_time=second_end if trigger_id == "second-licht-end-time" else None,
             )
 
     return [
@@ -598,7 +629,7 @@ def update_graph(*args):
 
 
 def lade_aktuelle_werte():
-    tabellen = ["WaterLevel_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]
+    tabellen = ["Ultrasonic_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]
     werte = {}
 
     conn = sqlite3.connect(DB_PATH)
@@ -625,7 +656,7 @@ def lade_aktuelle_werte():
 def update_sensorwerte(n):
     werte = lade_aktuelle_werte()
     return (
-        f"{werte['WaterLevel_Sensor']}%",
+        f"{werte['Ultrasonic_Sensor']}%",
         f"{werte['PH_Sensor']}",
         f"{werte['EC_Sensor']} mS/cm",
         f"{werte['Temp_Sensor']} °C",
@@ -691,7 +722,7 @@ def get_sensor_data(sensor_label, number_value, time_unit):
     """
     # Mapping Dropdown-Label → Tabellenname in der DB
     table_mapping = {
-        "Füllstand": "WaterLevel_Sensor",
+        "Füllstand": "Ultrasonic_Sensor",
         "PH": "PH_Sensor",
         "EC": "EC_Sensor",
         "Temp": "Temp_Sensor",
@@ -726,7 +757,7 @@ def get_sensor_data(sensor_label, number_value, time_unit):
         df = pd.read_sql_query(query, conn, params=(time_limit_str,))
     else:  # Alle Sensoren
         dfs = []
-        for tname in ["WaterLevel_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]:
+        for tname in ["Ultrasonic_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]:
             q = f"""
                 SELECT value, timestamp
                 FROM {tname}
