@@ -283,13 +283,13 @@ def admin_dashboard_layout():
                                 dbc.Col(
                                     dbc.Switch(
                                         id="luefter-switch",
-                                        value=False,
+                                        disabled=True,
                                         className="float-end"
                                     ),
                                     className="d-flex justify-content-end"
                                 ),
                             ]),
-                            # Pumpeneinstellung
+                            # Lüftereinstellungen
                             html.Div([
                                 dbc.Label("Alle", html_for="fan-intervall", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']}),
@@ -343,7 +343,7 @@ def admin_dashboard_layout():
                                 dbc.Col(
                                     dbc.Switch(
                                         id="licht-switch",
-                                        value=False,
+                                        disabled=True,
                                         className="float-end"
                                     ),
                                     className="d-flex justify-content-end"
@@ -412,7 +412,7 @@ def admin_dashboard_layout():
                                 dbc.Col(
                                     dbc.Switch(
                                         id="pumpe-switch",
-                                        value=False,
+                                        disabled=True,
                                         className="float-end"
                                     ),
                                     className="d-flex justify-content-end"
@@ -525,6 +525,30 @@ def update_light_data(last_change=None, start_time=None, end_time=None, second_s
     conn.close()
 
 # ------------------------------
+# Funktion: Lichtbutton aktivieren/deaktivieren
+# ------------------------------
+@callback(
+    Output("licht-switch", "value"),
+    Input("licht-switch", "id")  # Dummy Input, nur um beim Laden zu triggern
+)
+def update_pump_switch(_):
+    # Verbindung zur DB öffnen
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Status abfragen
+    cursor.execute("SELECT status FROM Light WHERE rowid = 1")
+    result = cursor.fetchone()  # liefert ein Tupel wie ('online')
+
+    conn.close()  # Verbindung schließen
+
+    if result:
+        status = result[0]  # den Wert aus dem Tupel holen
+        return status == "online"
+    else:
+        return False  # falls kein Eintrag existiert
+
+# ------------------------------
 # Funktion: Pumpenwerte lesen
 # ------------------------------
 def get_pump_data():
@@ -571,6 +595,30 @@ def update_pump_data(last_change=None, intervall=None, on_for=None):
     conn.close()
 
 # ------------------------------
+# Funktion: Pumpenbutton aktivieren/deaktivieren
+# ------------------------------
+@callback(
+    Output("pumpe-switch", "value"),
+    Input("pumpe-switch", "id")  # Dummy Input, nur um beim Laden zu triggern
+)
+def update_pump_switch(_):
+    # Verbindung zur DB öffnen
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Status abfragen
+    cursor.execute("SELECT status FROM Pump WHERE rowid = 1")
+    result = cursor.fetchone()  # liefert ein Tupel wie ('online')
+
+    conn.close()  # Verbindung schließen
+
+    if result:
+        status = result[0]  # den Wert aus dem Tupel holen
+        return status == "online"
+    else:
+        return False  # falls kein Eintrag existiert
+
+# ------------------------------
 # Funktion: Lüfterwerte lesen
 # ------------------------------
 def get_fan_data():
@@ -615,6 +663,30 @@ def update_fan_data(last_change=None, intervall=None, on_for=None):
 
     conn.commit()
     conn.close()
+
+# ------------------------------
+# Funktion: Lüfterbutton aktivieren/deaktivieren
+# ------------------------------
+@callback(
+    Output("luefter-switch", "value"),
+    Input("luefter-switch", "id")  # Dummy Input, nur um beim Laden zu triggern
+)
+def update_pump_switch(_):
+    # Verbindung zur DB öffnen
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Status abfragen
+    cursor.execute("SELECT status FROM Fan WHERE rowid = 1")
+    result = cursor.fetchone()  # liefert ein Tupel wie ('online')
+
+    conn.close()  # Verbindung schließen
+
+    if result:
+        status = result[0]  # den Wert aus dem Tupel holen
+        return status == "online"
+    else:
+        return False  # falls kein Eintrag existiert
 
 def get_last_change(table_name):
     conn = sqlite3.connect(DB_PATH)
