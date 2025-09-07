@@ -12,17 +12,24 @@ import datetime
 # DS18b20 Temperatur Sensor wird nicht mit one-wire im system erkannt
 # GR-CP6 G3 Water Flow Sensor braucht Resistor um auf 3.3v zu kommen 
 
+# Macht Werte in die Datenbank nach 2 Stunden
+def add_to_db():
+            cursor.execute("INSERT INTO Humidity_Sensor VALUES (humidity, datetime.datetime.now, humidity)")
+            cursor.execute("INSERT INTO WaterLevel_Sensor VALUES (water_level, datetime.datetime.now, water_level)")
+            cursor.execute("INSERT INTO Ultrasonic_Sensor VALUES (sonar.distance, datetime.datetime.now, sonar.distance)")
+            cursor.execute("INSERT INTO PH_Sensor VALUES (ph_val, datetime.datetime.now, ph_val)")
+            cursor.execute("INSERT INTO EC_Sensor VALUES (tds_value, datetime.datetime.now, tds_value)")
+
 def sensor_activate():
     # SQL Initialisieren
     db_path = "./SQLite/sensors.db"
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    self.is_sleeping = True
 
     # DHT11 Temperature and Humidity Sensor
-    # Verbunden an GPIO 4, Pin 7
+    # Verbunden an GPIO 17, Pin 1
     # Initial the dht device, with data pin connected to:
-    dhtDevice = adafruit_dht.DHT11(board.D4)
+    dhtDevice = adafruit_dht.DHT11(board.D17)
 
     # Water Sensor
     # Verbunden an ADS Channel 3
@@ -71,7 +78,7 @@ def sensor_activate():
             # Print the values to the serial port
             temperature_c = dhtDevice.temperature
             humidity = dhtDevice.humidity
-            cursor.execute("UPDATE Humidity_Sensor SET live_value = humidity")
+            cursor.execute("UPDATE Humidity_Sensor SET live_value = ? Where rowid = ?",(humidity,1))
             
 
         except RuntimeError as error:
@@ -82,9 +89,7 @@ def sensor_activate():
         except KeyboardInterrupt:
             print("\nScript terminated by User.")
             dhtDevice.exit()
-        except Exception as error:
-            dhtDevice.exit()
-            raise error
+        
 
         # Water Sensor
         try:
@@ -94,15 +99,14 @@ def sensor_activate():
             #Convert ADC Value to water level percentage
             water_level = (adc_value - Min_ADC_Value) / (Max_ADC_Value - Min_ADC_Value) * 100
 
-            cursor.execute("UPDATE WaterLevel_Sensor SET live_value = water_level")
+            cursor.execute("UPDATE WaterLevel_Sensor SET live_value = ? WHERE rowid = ?",(water_level,1))
 
         except KeyboardInterrupt:
             print("\nScript terminated by User.")
 
         # Ultrasonic Sensor for Water level
         try:
-            print(sonar.distance, f"cm")
-            cursor.execute("UPDATE Ultrasonic_Sensor SET live_value = sonar.distance")
+            cursor.execute("UPDATE Ultrasonic_Sensor SET live_value = ? WHERE rowid = ?",(sonar.distance,1))
 
         except RuntimeError:
             print("Retrying!")
@@ -125,11 +129,8 @@ def sensor_activate():
                         
             avg_val = sum(buffer_arr[2:8]) / 6
             ph_val = cali_m * avg_val + cali_y - 1.95
-        
-            print(f" Spannung: {avg_val:.3f} V")
-            print(f" PH: {ph_val:.3f}")
 
-            cursor.execute("UPDATE PH_Sensor SET live_value = ph_val")
+            cursor.execute("UPDATE PH_Sensor SET live_value = ? WHERE rowid = ?",(ph_val,1))
 
         except KeyboardInterrupt:
             print("\nScript terminated by User.")
@@ -145,21 +146,13 @@ def sensor_activate():
 
             tds_value = (133.42*compensationVolt*compensationVolt*compensationVolt - 255.86*compensationVolt*compensationVolt + 857.39*compensationVolt)*0.5 # Convert Voltage to tds value
 
-            cursor.execute("UPDATE EC_Sensor SET live_value = tds_value")
+            cursor.execute("UPDATE EC_Sensor SET live_value = ? WHERE rowid = ?",(tds_value,1))
 
         except KeyboardInterrupt:
             print("\nScript terminated by User.")
 
         # 2 Stunden in ms = 7200000
-        self.after(7200000, add_to_db)
-
-        #Macht Werte in die Datenbank nach 2 Stunden
-        def add_to_db():
-            cursor.execute("INSERT INTO Humidity_Sensor VALUES (humidity, datetime.datetime.now, humidity)")
-            cursor.execute("INSERT INTO WaterLevel_Sensor VALUES (water_level, datetime.datetime.now, water_level)")
-            cursor.execute("INSERT INTO Ultrasonic_Sensor VALUES (sonar.distance, datetime.datetime.now, sonar.distance)")
-            cursor.execute("INSERT INTO PH_Sensor VALUES (ph_val, datetime.datetime.now, ph_val)")
-            cursor.execute("INSERT INTO EC_Sensor VALUES (tds_value, datetime.datetime.now, tds_value)")
+        #self.after(7200000, add_to_db)
 
         conn.commit()
         time.sleep(1.0)

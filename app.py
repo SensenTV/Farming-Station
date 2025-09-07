@@ -139,10 +139,11 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
 scheduler.start()
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     # Sensoren in eigenem Thread starten
-    sensor_thread = threading.Thread(target=sensors.sensor_activate, daemon=True)
-    sensor_thread.start()
+    #sensor_thread = threading.Thread(target=sensors.sensor_activate, daemon=True)
+    #sensor_thread.start()
 
     # Dash-App starten
-    app.run(debug=True, host='0.0.0.0', port=8050)
+sensors.sensor_activate()
+app.run(debug=True, host='0.0.0.0', port=8050)
