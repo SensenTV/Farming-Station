@@ -14,7 +14,7 @@ import datetime
 
 def sensor_activate():
     # SQL Initialisieren
-    db_path = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLite\sensors.db"
+    db_path = "./SQLite/sensors.db"
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     self.is_sleeping = True
@@ -161,5 +161,5 @@ def sensor_activate():
             cursor.execute("INSERT INTO PH_Sensor VALUES (ph_val, datetime.datetime.now, ph_val)")
             cursor.execute("INSERT INTO EC_Sensor VALUES (tds_value, datetime.datetime.now, tds_value)")
 
-        conn.commit
+        conn.commit()
         time.sleep(1.0)

@@ -11,6 +11,8 @@ from pages.user_dashboardpage import user_dashboard_layout
 from pages.admin_dashboardpage import admin_dashboard_layout
 from apscheduler.schedulers.background import BackgroundScheduler
 from SQLite import data_deletion
+from Sensors import sensors
+import threading
 
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.CYBORG])
@@ -138,4 +140,9 @@ scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
 scheduler.start()
 
 if __name__ == '__main__':
+    # Sensoren in eigenem Thread starten
+    sensor_thread = threading.Thread(target=sensors.sensor_activate, daemon=True)
+    sensor_thread.start()
+
+    # Dash-App starten
     app.run(debug=True, host='0.0.0.0', port=8050)
