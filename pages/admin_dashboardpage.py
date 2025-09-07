@@ -323,7 +323,7 @@ def admin_dashboard_layout():
                                           step=1,
                                           value=fan_data["on_for"]
                                           ),
-                                dbc.Label(id="Minuten einschalten", html_for="fan-intervall", className="me-2 mb-0",
+                                dbc.Label("Minuten einschalten", html_for="fan-intervall", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']})
                             ], className="d-flex align-items-center mt-2"),
                             html.Small(
@@ -453,7 +453,7 @@ def admin_dashboard_layout():
                                           step=1,
                                           value=pump_data["on_for"]
                                 ),
-                                dbc.Label(id="Minuten einschalten", html_for="pump-intervall", className="me-2 mb-0",
+                                dbc.Label("Minuten einschalten", html_for="pump-intervall", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']})
                             ], className="d-flex align-items-center mt-2"),
                                 html.Small(
