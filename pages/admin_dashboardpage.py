@@ -11,6 +11,7 @@ import json
 import os
 
 DB_PATH = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLite\sensors.db"
+log_data = []
 
 # Aktualisiertes Farbschema
 COLOR_SCHEME = {
@@ -242,6 +243,9 @@ def admin_dashboard_layout():
                         },
                         readOnly=True
                     ),
+                    dbc.Button("Download Log", id="download-btn", color="primary", className="mt-2"),
+                    dcc.Download(id="download-log"),
+                    dbc.Button("Clear Log", id="clear-log-btn", color="danger", className="mt-2 ms-2")
                 ], md=6),
 
                 # Kamera
@@ -264,10 +268,14 @@ def admin_dashboard_layout():
                     ),
                 ], md=6),
             ], className="mb-4"),
+            dcc.Interval(id="log-update", interval=2000, n_intervals=0),
+            html.Div(id="dummy-output", style={"display": "none"}),
 
             # Steuerungselemente
             dbc.Row([
-
+                dcc.Interval(id="luefter-interval", interval=5 * 1000, n_intervals=0),
+                dcc.Interval(id="pumpe-interval", interval=5 * 1000, n_intervals=0),
+                dcc.Interval(id="licht-interval", interval=5 * 1000, n_intervals=0),
                 # Lüfter
                 dbc.Col([
                     dbc.Card([
@@ -529,9 +537,9 @@ def update_light_data(last_change=None, start_time=None, end_time=None, second_s
 # ------------------------------
 @callback(
     Output("licht-switch", "value"),
-    Input("licht-switch", "id")  # Dummy Input, nur um beim Laden zu triggern
+    Input("licht-interval", "n_intervals") # Dummy Input, nur um beim Laden zu triggern
 )
-def update_pump_switch(_):
+def update_light_switch(n):
     # Verbindung zur DB öffnen
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -599,9 +607,9 @@ def update_pump_data(last_change=None, intervall=None, on_for=None):
 # ------------------------------
 @callback(
     Output("pumpe-switch", "value"),
-    Input("pumpe-switch", "id")  # Dummy Input, nur um beim Laden zu triggern
+    Input("pumpe-interval", "n_intervals")  # Dummy Input, nur um beim Laden zu triggern
 )
-def update_pump_switch(_):
+def update_pump_switch(n):
     # Verbindung zur DB öffnen
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -669,9 +677,9 @@ def update_fan_data(last_change=None, intervall=None, on_for=None):
 # ------------------------------
 @callback(
     Output("luefter-switch", "value"),
-    Input("luefter-switch", "id")  # Dummy Input, nur um beim Laden zu triggern
+    Input("luefter-interval", "n_intervals")
 )
-def update_pump_switch(_):
+def update_fan_switch(n):
     # Verbindung zur DB öffnen
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -767,39 +775,41 @@ def update_timestamps(
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # prüfen, welches Element den Callback ausgelöst hat
-    if ctx.triggered_id == "luefter-switch":
+    triggered_id = ctx.triggered_id
+
+    if triggered_id == "luefter-switch":
         update_last_change("Fan", current_time)
 
-    elif ctx.triggered_id == "pumpe-switch":
+    elif triggered_id == "pumpe-switch":
         update_last_change("Pump", current_time)
 
-    elif ctx.triggered_id in ["pump-intervall", "pump-on-for"]:
+    elif triggered_id in ["pump-intervall", "pump-on-for"]:
         update_pump_data(
             last_change=current_time,
             intervall=pump_intervall,
             on_for=pump_on_for,
         )
 
-    elif ctx.triggered_id in ["fan-intervall", "fan-on-for"]:
+    elif triggered_id in ["fan-intervall", "fan-on-for"]:
         update_fan_data(
             last_change=current_time,
             intervall=fan_intervall,
             on_for=fan_on_for,
         )
 
-    elif ctx.triggered_id in [
+    elif triggered_id in [
         "licht-start-time", "licht-end-time", "licht-switch",
         "second-licht-start-time", "second-licht-end-time"
     ]:
         update_light_data(
             last_change=current_time,
-            start_time=start_time if ctx.triggered_id == "licht-start-time" else None,
-            end_time=end_time if ctx.triggered_id == "licht-end-time" else None,
-            second_start_time=second_start if ctx.triggered_id == "second-licht-start-time" else None,
-            second_end_time=second_end if ctx.triggered_id == "second-licht-end-time" else None,
+            start_time=start_time if triggered_id == "licht-start-time" else None,
+            end_time=end_time if triggered_id == "licht-end-time" else None,
+            second_start_time=second_start if triggered_id == "second-licht-start-time" else None,
+            second_end_time=second_end if triggered_id == "second-licht-end-time" else None,
         )
 
-    # Rückgabe: aktuelle Werte aus der DB
+    # Falls Interval getriggert hat oder Input getriggert wurde, Labels aktualisieren
     return [
         f"Last change: {get_last_change('Fan')}",
         f"Last change: {get_last_change('Pump')}",
@@ -1061,4 +1071,103 @@ def download_sensor_data(n_clicks, sensor_label, number_value, time_unit):
     # ------------------------------
     filename = f"{sensor_label}_{number_value}_{time_unit}.csv"
     return dcc.send_data_frame(df.to_csv, filename, index=False)
+
+# ------------------------------
+# Funktion: Log Datenstruktur
+# ------------------------------
+def add_log(event_type, component, value=None):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = {
+        "timestamp": timestamp,
+        "event": event_type,
+        "component": component,
+        "value": value
+    }
+    log_data.append(log_entry)
+
+# ------------------------------
+# Funktion: Log Updaten
+# ------------------------------
+@callback(
+    Output("error-log", "value", allow_duplicate=True),
+    Input("log-update", "n_intervals"),
+    prevent_initial_call=True
+)
+def update_log_text(n):
+    return "\n".join([f"{entry['timestamp']} | {entry['event']} | {entry['component']} | {entry['value']}"
+                      for entry in log_data])
+
+# ------------------------------
+# Funktion: Log Downloaden
+# ------------------------------
+@callback(
+    Output("download-log", "data"),
+    Input("download-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def download_log(n_clicks):
+    df = pd.DataFrame(log_data)
+    return dcc.send_data_frame(df.to_csv, "log.csv", index=False)
+
+# ------------------------------
+# Funktion: Log leeren
+# ------------------------------
+@callback(
+    Output("error-log", "value", allow_duplicate=True),          # Textarea sofort leeren
+    Input("clear-log-btn", "n_clicks"),    # Button klick
+    prevent_initial_call=True
+)
+def clear_log(n_clicks):
+    global log_data
+    log_data = []  # Log leeren
+    return ""      # Textarea leeren
+
+# ------------------------------
+# Funktion: Sensoren überprüfen
+# ------------------------------
+SENSOR_LIMITS = {
+    "EC_Sensor": (0.6, 1.8),
+    "Humidity_Sensor": (20, 80),
+    "PH_Sensor": (5.5, 7.5),
+    "Temp_Sensor": (18, 30),
+    "Ultrasonic_Sensor": (30, 99),
+    "WaterLevel_Sensor": (10, 40),
+}
+SENSOR_STATUS = {
+    "Fan": None,
+    "Light": None,
+    "Pump": None,
+    "FlowRate_Sensor": None
+}
+def check_sensors():
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+
+        for sensor, (low, high) in SENSOR_LIMITS.items():
+            result = cursor.execute(f"SELECT live_value FROM {sensor}").fetchone()
+            if result:
+                value = result[0]
+                if value < low or value > high:
+                    add_log("WARNING", sensor, value)
+
+        for sensor_name in SENSOR_STATUS:
+            result = cursor.execute(f"SELECT status FROM {sensor_name}").fetchone()
+            if result:
+                status = result[0]  # z.B. "ON" oder "OFF"
+
+                # Nur loggen, wenn sich der Status geändert hat
+                if SENSOR_STATUS[sensor_name] != status:
+                    SENSOR_STATUS[sensor_name] = status
+                    add_log("INFO", sensor_name, status)
+
+# ------------------------------
+# Funktion: check_sensors aufrufen
+# ------------------------------
+@callback(
+    Output("dummy-output", "children"),  # Dummy
+    Input("log-update", "n_intervals")
+)
+def periodic_sensor_check(n):
+    check_sensors()  # füllt log_data bei Grenzwertverletzungen
+    return ""
 
