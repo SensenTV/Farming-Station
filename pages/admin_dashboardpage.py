@@ -33,6 +33,8 @@ def admin_dashboard_layout():
     licht_data = get_light_data()
     start_time = licht_data.get("start_time")
     end_time = licht_data.get("end_time")
+    pump_data = get_pump_data()
+    fan_data = get_fan_data()
     
     system_card = dbc.Card([
         dbc.CardHeader(
@@ -142,7 +144,7 @@ def admin_dashboard_layout():
                                 "displayModeBar": True,
                                 "modeBarButtonsToRemove": [
                                     "zoom2d", "select2d", "lasso2d",
-                                    "autoscale2d"
+                                    "autoScale2d"
                                 ],
                                 "displaylogo": False
                             }
@@ -287,6 +289,35 @@ def admin_dashboard_layout():
                                     className="d-flex justify-content-end"
                                 ),
                             ]),
+                            # Pumpeneinstellung
+                            html.Div([
+                                dbc.Label("Alle", html_for="fan-intervall", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Input(id="fan-intervall",
+                                          type="number",
+                                          className="me-2",
+                                          size="sm",
+                                          min=0,
+                                          max=120,
+                                          style={"width": "15%"},
+                                          step=1,
+                                          value=fan_data["intervall"]
+                                          ),
+                                dbc.Label("Minuten für", html_for="fan-intervall", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Input(id="fan-on-for",
+                                          type="number",
+                                          className="me-2",
+                                          size="sm",
+                                          min=0,
+                                          max=120,
+                                          style={"width": "15%"},
+                                          step=1,
+                                          value=fan_data["on_for"]
+                                          ),
+                                dbc.Label(id="Minuten einschalten", html_for="fan-intervall", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']})
+                            ], className="d-flex align-items-center mt-2"),
                             html.Small(
                                 f"Last change: {get_last_change('Fan')}",
                                 id="luefter-last-change",
@@ -387,12 +418,42 @@ def admin_dashboard_layout():
                                     className="d-flex justify-content-end"
                                 ),
                             ]),
-                            html.Small(
+
+                            #Pumpeneinstellung
+                            html.Div([
+                                dbc.Label("Alle", html_for="pump-intervall", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Input(id="pump-intervall",
+                                          type="number",
+                                          className="me-2",
+                                          size="sm",
+                                          min=0,
+                                          max=120,
+                                          style={"width": "15%"},
+                                          step=1,
+                                          value=pump_data["intervall"]
+                                ),
+                                dbc.Label("Minuten für", html_for="pump-intervall", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Input(id="pump-on-for",
+                                          type="number",
+                                          className="me-2",
+                                          size="sm",
+                                          min=0,
+                                          max=120,
+                                          style={"width": "15%"},
+                                          step=1,
+                                          value=pump_data["on_for"]
+                                ),
+                                dbc.Label(id="Minuten einschalten", html_for="pump-intervall", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']})
+                            ], className="d-flex align-items-center mt-2"),
+                                html.Small(
                                 f"Last change: {get_last_change('Pump')}",
                                 id="pumpe-last-change",
                                 className="d-block mt-2",
                                 style={"color": COLOR_SCHEME['text_secondary']}
-                            )
+                                )
                         ])
                     ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
                 ], md=4),
@@ -407,7 +468,9 @@ def admin_dashboard_layout():
         fluid=True,
         style={"background-color": COLOR_SCHEME['background']}
     )
-# Werte lesen
+# ------------------------------
+# Funktion: Lichtwerte lesen
+# ------------------------------
 def get_light_data():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -430,6 +493,128 @@ def get_light_data():
             "second_start_time": "00:00",
             "second_end_time": "05:00",
         }
+# ------------------------------
+# Funktion: Lichtwerte schreiben
+# ------------------------------
+def update_light_data(last_change=None, start_time=None, end_time=None, second_start_time=None, second_end_time=None):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Existiert schon ein Eintrag?
+    cursor.execute("SELECT COUNT(*) FROM Light")
+    exists = cursor.fetchall()[0]
+
+    if exists:
+        if last_change is not None:
+            cursor.execute("UPDATE Light SET last_change = ? WHERE ROWID = 1", (last_change,))
+        if start_time is not None:
+            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 1", (start_time,))
+        if end_time is not None:
+            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 1", (end_time,))
+        if second_start_time is not None:
+            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 2", (second_start_time,))
+        if second_end_time is not None:
+            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 2", (second_end_time,))
+    else:
+        # Fallback-Eintrag
+        cursor.execute("INSERT INTO Light (last_change, start_time, end_time) VALUES (?, ?, ?)", (
+            last_change or "-", start_time or "06:00", end_time or "22:00", start_time or "00:00", end_time or "05:00",
+        ))
+
+    conn.commit()
+    conn.close()
+
+# ------------------------------
+# Funktion: Pumpenwerte lesen
+# ------------------------------
+def get_pump_data():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT last_change, intervall, on_for FROM Pump LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return {
+            "last_change": result[0],
+            "intervall": result[1],
+            "on_for": result[2],
+        }
+    else:
+        return {
+            "last_change": "-",
+            "intervall": "10",
+            "on_for": "10",
+        }
+
+# ------------------------------
+# Funktion: Pumpenwerte schreiben
+# ------------------------------
+def update_pump_data(last_change=None, intervall=None, on_for=None):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM Pump")
+    exists = cursor.fetchone()[0]
+
+    if exists:
+        if last_change is not None:
+            cursor.execute("UPDATE Pump SET last_change = ? WHERE ROWID = 1", (last_change,))
+        if intervall is not None:
+            cursor.execute("UPDATE Pump SET intervall = ? WHERE ROWID = 1", (intervall,))
+        if on_for is not None:
+            cursor.execute("UPDATE Pump SET on_for = ? WHERE ROWID = 1", (on_for,))
+    else:
+        cursor.execute("INSERT INTO Pump (last_change, intervall, on_for) VALUES (?, ?, ?)",(
+            last_change or "-", intervall or "10", on_for or "10",
+        ))
+
+    conn.commit()
+    conn.close()
+
+# ------------------------------
+# Funktion: Lüfterwerte lesen
+# ------------------------------
+def get_fan_data():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT last_change, intervall, on_for FROM Fan LIMIT 1")
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return {
+            "last_change": result[0],
+            "intervall": result[1],
+            "on_for": result[2],
+        }
+    else:
+        return {
+            "last_change": "-",
+            "intervall": "10",
+            "on_for": "10",
+        }
+
+# ------------------------------
+# Funktion: Lüfterwerte schreiben
+# ------------------------------
+def update_fan_data(last_change=None, intervall=None, on_for=None):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM Fan")
+    exists = cursor.fetchone()[0]
+
+    if exists:
+        if last_change is not None:
+            cursor.execute("UPDATE Fan SET last_change = ? WHERE ROWID = 1", (last_change,))
+        if intervall is not None:
+            cursor.execute("UPDATE Fan SET intervall = ? WHERE ROWID = 1", (intervall,))
+        if on_for is not None:
+            cursor.execute("UPDATE Fan SET on_for = ? WHERE ROWID = 1", (on_for,))
+    else:
+        cursor.execute("INSERT INTO Fan (last_change, intervall, on_for) VALUES (?, ?, ?)",(
+            last_change or "-", intervall or "10", on_for or "10",
+        ))
+
+    conn.commit()
+    conn.close()
 
 def get_last_change(table_name):
     conn = sqlite3.connect(DB_PATH)
@@ -463,36 +648,6 @@ def get_data_from_db(table_name: str, value_column: str):
 
     return times, values
 
-
-# Werte schreiben
-def update_light_data(last_change=None, start_time=None, end_time=None, second_start_time=None, second_end_time=None):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # Existiert schon ein Eintrag?
-    cursor.execute("SELECT COUNT(*) FROM Light")
-    exists = cursor.fetchall()[0]
-
-    if exists:
-        if last_change is not None:
-            cursor.execute("UPDATE Light SET last_change = ? WHERE ROWID = 1", (last_change,))
-        if start_time is not None:
-            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 1", (start_time,))
-        if end_time is not None:
-            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 1", (end_time,))
-        if second_start_time is not None:
-            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 2", (second_start_time,))
-        if second_end_time is not None:
-            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 2", (second_end_time,))
-    else:
-        # Fallback-Eintrag
-        cursor.execute("INSERT INTO Light (last_change, start_time, end_time) VALUES (?, ?, ?)", (
-            last_change or "-", start_time or "06:00", end_time or "22:00", start_time or "00:00", end_time or "05:00",
-        ))
-
-    conn.commit()
-    conn.close()
-
 def update_last_change(table_name, value):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -510,39 +665,69 @@ def update_last_change(table_name, value):
 
 # Neue Callbacks für die Zeitstempel-Aktualisierung
 @callback(
-    [Output("luefter-last-change", "children"),
-     Output("pumpe-last-change", "children"),
-     Output("licht-last-change", "children")],
-    [Input("luefter-switch", "value"),
-     Input("pumpe-switch", "value"),
-     Input("licht-start-time", "value"),
-     Input("licht-end-time", "value"),
-     Input("licht-switch", "value"),
-     Input("second-licht-start-time", "value"),
-     Input("second-licht-end-time", "value"),]
+    [
+        Output("luefter-last-change", "children"),
+        Output("pumpe-last-change", "children"),
+        Output("licht-last-change", "children"),
+    ],
+    [
+        Input("luefter-switch", "value"),
+        Input("pumpe-switch", "value"),
+        Input("pump-intervall", "value"),
+        Input("pump-on-for", "value"),
+        Input("licht-start-time", "value"),
+        Input("licht-end-time", "value"),
+        Input("licht-switch", "value"),
+        Input("second-licht-start-time", "value"),
+        Input("second-licht-end-time", "value"),
+        Input("fan-intervall", "value"),
+        Input("fan-on-for", "value"),
+    ]
 )
-def update_timestamps(luefter_value, pumpe_value, start_time, end_time, licht_switch, second_start, second_end,):
-    ctx = callback_context
+def update_timestamps(
+    luefter_value, pumpe_value,
+    pump_intervall, pump_on_for,
+    start_time, end_time,
+    licht_switch, second_start,
+    second_end, fan_intervall,
+    fan_on_for
+):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    if ctx.triggered:
-        trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    # prüfen, welches Element den Callback ausgelöst hat
+    if ctx.triggered_id == "luefter-switch":
+        update_last_change("Fan", current_time)
 
-        if trigger_id == "luefter-switch":
-            update_last_change("Fan", current_time)
+    elif ctx.triggered_id == "pumpe-switch":
+        update_last_change("Pump", current_time)
 
-        elif trigger_id == "pumpe-switch":
-            update_last_change("Pump", current_time)
+    elif ctx.triggered_id in ["pump-intervall", "pump-on-for"]:
+        update_pump_data(
+            last_change=current_time,
+            intervall=pump_intervall,
+            on_for=pump_on_for,
+        )
 
-        elif trigger_id in ["licht-start-time", "licht-end-time", "licht-switch", "second-licht-start-time", "second-licht-end-time"]:
-            update_light_data(
-                last_change=current_time,
-                start_time=start_time if trigger_id == "licht-start-time" else None,
-                end_time=end_time if trigger_id == "licht-end-time" else None,
-                second_start_time=second_start if trigger_id == "second-licht-start-time" else None,
-                second_end_time=second_end if trigger_id == "second-licht-end-time" else None,
-            )
+    elif ctx.triggered_id in ["fan-intervall", "fan-on-for"]:
+        update_fan_data(
+            last_change=current_time,
+            intervall=fan_intervall,
+            on_for=fan_on_for,
+        )
 
+    elif ctx.triggered_id in [
+        "licht-start-time", "licht-end-time", "licht-switch",
+        "second-licht-start-time", "second-licht-end-time"
+    ]:
+        update_light_data(
+            last_change=current_time,
+            start_time=start_time if ctx.triggered_id == "licht-start-time" else None,
+            end_time=end_time if ctx.triggered_id == "licht-end-time" else None,
+            second_start_time=second_start if ctx.triggered_id == "second-licht-start-time" else None,
+            second_end_time=second_end if ctx.triggered_id == "second-licht-end-time" else None,
+        )
+
+    # Rückgabe: aktuelle Werte aus der DB
     return [
         f"Last change: {get_last_change('Fan')}",
         f"Last change: {get_last_change('Pump')}",
@@ -612,6 +797,7 @@ def update_graph(*args):
             "xaxis": {
                 "type": "date",
                 "range": [past_24h.isoformat(), now.isoformat()],  # expliziter Bereich
+                "autorange": False,
                 "tickformat": "%H:%M\n%d.%m",  # Stunden + Datum z. B.
                 "gridcolor": COLOR_SCHEME['graph_grid'],
                 "color": COLOR_SCHEME['text_primary'],
