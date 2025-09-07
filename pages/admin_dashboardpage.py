@@ -10,7 +10,7 @@ import sqlite3
 import json
 import os
 
-DB_PATH = r"C:\Users\steve\PycharmProjects\Farming-Station\SQLite\sensors.db"
+DB_PATH = "./SQLite/sensors.db"
 log_data = []
 
 # Aktualisiertes Farbschema
