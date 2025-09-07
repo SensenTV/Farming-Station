@@ -137,6 +137,8 @@ def logout(n_clicks):
 scheduler = BackgroundScheduler()
 # Methode ohne () übergeben!
 scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
+scheduler.add_job(sensors.add_to_db,"interval",seconds=10)#7200
+scheduler.add_job(sensors.sensor_activate,"interval",seconds=5)
 scheduler.start()
 
 #if __name__ == '__main__':
@@ -145,5 +147,5 @@ scheduler.start()
     #sensor_thread.start()
 
     # Dash-App starten
-sensors.sensor_activate()
+#sensors.sensor_activate()
 app.run(debug=True, host='0.0.0.0', port=8050)
