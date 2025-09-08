@@ -9,8 +9,10 @@ import pandas as pd
 import sqlite3
 import json
 import os
+import csv
 
 DB_PATH = "./SQLite/sensors.db"
+LOG_FILE = "log.csv"
 log_data = []
 
 # Aktualisiertes Farbschema
@@ -39,8 +41,18 @@ def admin_dashboard_layout():
     
     system_card = dbc.Card([
         dbc.CardHeader(
-            html.H3("System 1", style={"color": COLOR_SCHEME['text_primary']}),
-            style={"background-color": COLOR_SCHEME['card_bg']}
+            dbc.Row([
+                dbc.Col(
+                    html.H3("System 1", style={"color": COLOR_SCHEME['text_primary']}),
+                    width=11,
+                    style={"background-color": COLOR_SCHEME['card_bg']},
+                ),
+                dbc.Col(
+                    dbc.Button("Logout", id={'type': 'logout-btn', 'index': 'admin'}, color="primary", outline=True),
+                    width="auto",
+                    className="d-flex justify-content-right",  # Button rechts ausrichten
+                )
+            ]),style={"background-color": COLOR_SCHEME['card_bg']},
         ),
         dbc.CardBody([
             # Aktuelle Werte
@@ -470,12 +482,20 @@ def admin_dashboard_layout():
     ], className="shadow-sm")
 
     return dbc.Container(
-        dbc.Row([
-            dbc.Col(system_card, width=12)
-        ], className="g-0 vh-100 py-4"),
+        children=[  # Alles in einer Liste
+            dbc.Row([
+                dbc.Col(system_card, width=12)
+            ], className="g-0 vh-100 py-4"),
+            dcc.Interval(
+                id='admin-refresh-interval',
+                interval=3000,
+                n_intervals=0
+            )
+        ],
         fluid=True,
         style={"background-color": COLOR_SCHEME['background']}
     )
+
 # ------------------------------
 # Funktion: Lichtwerte lesen
 # ------------------------------
@@ -557,6 +577,28 @@ def update_light_switch(n):
         return False  # falls kein Eintrag existiert
 
 # ------------------------------
+# Funktion: Licht Uhrzeiten aktualisieren
+# ------------------------------
+@callback(
+    [
+        Output("licht-start-time", "value"),
+        Output("licht-end-time", "value"),
+        Output("second-licht-start-time", "value"),
+        Output("second-licht-end-time", "value"),
+    ],
+    Input("admin-refresh-interval", "n_intervals")
+)
+def refresh_light_times(n):
+    light_data = get_light_data()
+    return (
+        light_data["start_time"],
+        light_data["end_time"],
+        light_data["second_start_time"],
+        light_data["second_end_time"],
+    )
+
+
+# ------------------------------
 # Funktion: Pumpenwerte lesen
 # ------------------------------
 def get_pump_data():
@@ -625,6 +667,20 @@ def update_pump_switch(n):
         return status == "online"
     else:
         return False  # falls kein Eintrag existiert
+
+# ------------------------------
+# Funktion: Pumpentextfeld aktualisieren
+# ------------------------------
+@callback(
+    [
+        Output("pump-intervall", "value"),
+        Output("pump-on-for", "value")
+    ],
+    Input("admin-refresh-interval", "n_intervals")
+)
+def refresh_pump_inputs(n):
+    pump_data = get_pump_data()
+    return pump_data["intervall"], pump_data["on_for"]
 
 # ------------------------------
 # Funktion: Lüfterwerte lesen
@@ -696,6 +752,21 @@ def update_fan_switch(n):
     else:
         return False  # falls kein Eintrag existiert
 
+# ------------------------------
+# Funktion: Lüftertextfeld aktualisieren
+# ------------------------------
+@callback(
+    [
+        Output("fan-intervall", "value"),
+        Output("fan-on-for", "value")
+    ],
+    Input("admin-refresh-interval", "n_intervals")
+)
+def refresh_fan_inputs(n):
+    fan_data = get_fan_data()
+    return fan_data["intervall"], fan_data["on_for"]
+
+
 def get_last_change(table_name):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -705,6 +776,9 @@ def get_last_change(table_name):
     return result[0] if result else "-"
 
 def get_data_from_db(table_name: str, value_column: str):
+    if not table_name or not value_column:
+        return [], []  # leere Listen zurückgeben, kein Graph
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
@@ -714,7 +788,7 @@ def get_data_from_db(table_name: str, value_column: str):
     query = f"""
         SELECT timestamp, {value_column}
         FROM {table_name}
-        WHERE timestamp >= ?
+        WHERE datetime(timestamp) >= datetime(?) AND {value_column} IS NOT NULL
         ORDER BY timestamp
     """
 
@@ -762,6 +836,7 @@ def update_last_change(table_name, value):
         Input("second-licht-end-time", "value"),
         Input("fan-intervall", "value"),
         Input("fan-on-for", "value"),
+        Input("werte-refresh", "n_intervals"),
     ]
 )
 def update_timestamps(
@@ -770,7 +845,7 @@ def update_timestamps(
     start_time, end_time,
     licht_switch, second_start,
     second_end, fan_intervall,
-    fan_on_for
+    fan_on_for, n_intervals
 ):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -826,7 +901,8 @@ def update_timestamps(
      Input("ph-graph-btn", "n_clicks"),
      Input("ec-graph-btn", "n_clicks"),
      Input("temp-graph-btn", "n_clicks"),
-     Input("luft-graph-btn", "n_clicks")],
+     Input("luft-graph-btn", "n_clicks"),
+     ],
     prevent_initial_call=True
 )
 def update_graph(*args):
@@ -840,12 +916,12 @@ def update_graph(*args):
     past_24h = now - timedelta(hours=24)
 
     title = "24h Verlauf: "
-    table = ""
-    column = ""
+    table = None,
+    column = None,
 
     if button_id == "fuellstand-graph-btn":
         title += "Füllstand"
-        table, column = "WaterLevel_Sensor", "value"
+        table, column = "Ultrasonic_Sensor", "value"
     elif button_id == "ph-graph-btn":
         title += "PH-Wert"
         table, column = "PH_Sensor", "value"
@@ -858,6 +934,9 @@ def update_graph(*args):
     elif button_id == "luft-graph-btn":
         title += "Luftfeuchtigkeit"
         table, column = "Humidity_Sensor", "value"
+
+    if not table or not column:
+        return {}, {"display": "none"}  # Kein Graph anzeigen, wenn ungültig
 
     times, values = get_data_from_db(table, column)
 
@@ -1085,6 +1164,14 @@ def add_log(event_type, component, value=None):
     }
     log_data.append(log_entry)
 
+    # CSV schreiben (append)
+    file_exists = os.path.isfile(LOG_FILE)
+    with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["timestamp", "event", "component", "value"])
+        if not file_exists:  # Header nur einmal schreiben
+            writer.writeheader()
+        writer.writerow(log_entry)
+
 # ------------------------------
 # Funktion: Log Updaten
 # ------------------------------
@@ -1094,8 +1181,15 @@ def add_log(event_type, component, value=None):
     prevent_initial_call=True
 )
 def update_log_text(n):
-    return "\n".join([f"{entry['timestamp']} | {entry['event']} | {entry['component']} | {entry['value']}"
-                      for entry in log_data])
+    if not os.path.exists(LOG_FILE):
+        return ""
+
+    df = pd.read_csv(LOG_FILE)
+    return "\n".join([
+        f"{row['timestamp']} | {row['event']} | {row['component']} | {row['value']}"
+        for _, row in df.iterrows()
+    ])
+
 
 # ------------------------------
 # Funktion: Log Downloaden
@@ -1103,11 +1197,13 @@ def update_log_text(n):
 @callback(
     Output("download-log", "data"),
     Input("download-btn", "n_clicks"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
+    allow_duplicate=True
 )
 def download_log(n_clicks):
-    df = pd.DataFrame(log_data)
-    return dcc.send_data_frame(df.to_csv, "log.csv", index=False)
+    if os.path.exists(LOG_FILE):
+        return dcc.send_file(LOG_FILE)  # Direkt die bestehende CSV liefern
+    return None
 
 # ------------------------------
 # Funktion: Log leeren
@@ -1119,8 +1215,14 @@ def download_log(n_clicks):
 )
 def clear_log(n_clicks):
     global log_data
-    log_data = []  # Log leeren
-    return ""      # Textarea leeren
+    log_data = []
+
+    # CSV leeren
+    with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["timestamp", "event", "component", "value"])
+        writer.writeheader()  # Header bleibt bestehen, Inhalt wird gelöscht
+
+    return ""
 
 # ------------------------------
 # Funktion: Sensoren überprüfen
@@ -1131,7 +1233,7 @@ SENSOR_LIMITS = {
     "PH_Sensor": (5.5, 7.5),
     "Temp_Sensor": (18, 30),
     "Ultrasonic_Sensor": (30, 99),
-    "WaterLevel_Sensor": (10, 40),
+    "WaterLevel_Sensor": (0, 25),
 }
 SENSOR_STATUS = {
     "Fan": None,

@@ -62,6 +62,9 @@ sensor_state = {
     "tds":None,
 }
 
+def safe_round(value, ndigits=2):
+    return round(value, ndigits) if value is not None else None
+
 # Macht Werte in die Datenbank nach 2 Stunden
 def add_to_db():
 
@@ -72,12 +75,17 @@ def add_to_db():
     db_lock = Lock()
     with db_lock:
 
-        now = datetime.datetime.now()
-        cursor.execute("INSERT INTO Humidity_Sensor (value, timestamp) VALUES(?,?)",(sensor_state["humidity"],now))
-        cursor.execute("INSERT INTO WaterLevel_Sensor (value, timestamp) VALUES(?,?)",(sensor_state["water_level"],now))
-        cursor.execute("INSERT INTO Ultrasonic_Sensor (value, timestamp) VALUES(?,?)",(sensor_state["ultrasonic"],now))
-        cursor.execute("INSERT INTO PH_Sensor (value, timestamp) VALUES(?,?)",(sensor_state["ph"],now))
-        cursor.execute("INSERT INTO EC_Sensor (value, timestamp) VALUES(?,?)",(sensor_state["tds"],now))
+        now = datetime.datetime.now().replace(microsecond=0)
+        cursor.execute("INSERT INTO Humidity_Sensor (value, timestamp) VALUES(?,?)",
+                       (safe_round(sensor_state["humidity"]),now))
+        cursor.execute("INSERT INTO WaterLevel_Sensor (value, timestamp) VALUES(?,?)",
+                       (safe_round(sensor_state["water_level"]),now))
+        cursor.execute("INSERT INTO Ultrasonic_Sensor (value, timestamp) VALUES(?,?)",
+                       (safe_round(sensor_state["ultrasonic"]),now))
+        cursor.execute("INSERT INTO PH_Sensor (value, timestamp) VALUES(?,?)",
+                       (safe_round(sensor_state["ph"]),now))
+        cursor.execute("INSERT INTO EC_Sensor (value, timestamp) VALUES(?,?)",
+                       (safe_round(sensor_state["tds"]),now))
 
     conn.commit()
     conn.close()
@@ -95,7 +103,10 @@ def sensor_activate():
         try:
             # Print the values to the serial port
             sensor_state["humidity"] = dhtDevice.humidity
-            cursor.execute("UPDATE Humidity_Sensor SET live_value = ? Where rowid = ?",(sensor_state["humidity"],1))
+            cursor.execute(
+                "UPDATE Humidity_Sensor SET live_value = ? WHERE rowid = ?",
+                (safe_round(sensor_state["humidity"]), 1)
+            )
             conn.commit()
             
 
@@ -117,7 +128,10 @@ def sensor_activate():
             #Convert ADC Value to water level percentage
             sensor_state["water_level"] = (adc_value - Min_ADC_Value) / (Max_ADC_Value - Min_ADC_Value) * 100
 
-            cursor.execute("UPDATE WaterLevel_Sensor SET live_value = ? WHERE rowid = ?",(sensor_state["water_level"],1))
+            cursor.execute(
+                "UPDATE WaterLevel_Sensor SET live_value = ? WHERE rowid = ?",
+                (safe_round(sensor_state["water_level"]), 1)
+            )
             conn.commit()
 
         except KeyboardInterrupt:
@@ -126,7 +140,10 @@ def sensor_activate():
         # Ultrasonic Sensor for Water level
         #try:
             #sensor_state["ultrasonic"] = sonar.distance
-            #cursor.execute("UPDATE Ultrasonic_Sensor SET live_value = ? WHERE rowid = ?",(sensor_state["ultrasonic"],1))
+            #cursor.execute(
+                    #"UPDATE Ultrasonic_Sensor SET live_value =? WHERE rowid = ?",
+                            #(safe_round(sensor_state["ultrasonic"]), 1)
+            #)
 
         #except RuntimeError:
             #print("Retrying!")
@@ -150,7 +167,10 @@ def sensor_activate():
             avg_val = sum(buffer_arr[2:8]) / 6
             sensor_state["ph"] = cali_m * avg_val + cali_y - 1.95
 
-            cursor.execute("UPDATE PH_Sensor SET live_value = ? WHERE rowid = ?",(sensor_state["ph"],1))
+            cursor.execute(
+                "UPDATE PH_Sensor SET live_value = ? WHERE rowid = ?",
+                (safe_round(sensor_state["ph"]), 1)
+            )
             conn.commit()
 
         except KeyboardInterrupt:
@@ -167,7 +187,10 @@ def sensor_activate():
 
             sensor_state["tds"] = (133.42*compensationVolt*compensationVolt*compensationVolt - 255.86*compensationVolt*compensationVolt + 857.39*compensationVolt)*0.5 # Convert Voltage to tds value
 
-            cursor.execute("UPDATE EC_Sensor SET live_value = ? WHERE rowid = ?",(sensor_state["tds"],1))
+            cursor.execute(
+                "UPDATE EC_Sensor SET live_value = ? WHERE rowid = ?",
+                (safe_round(sensor_state["tds"]), 1)
+            )
             conn.commit()
 
         except KeyboardInterrupt:
