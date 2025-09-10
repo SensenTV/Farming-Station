@@ -1249,6 +1249,13 @@ def clear_log(n_clicks):
 # ------------------------------
 # Funktion: Sensoren überprüfen
 # ------------------------------
+
+'''
+Warngrenzen (MIN,MAX) einstellen.
+MIN --> Weniger = Warnung
+Max --> Mehr = Warnung
+'''
+
 SENSOR_LIMITS = {
     "EC_Sensor": (0.6, 1.8),
     "Humidity_Sensor": (20, 80),
@@ -1269,22 +1276,36 @@ def check_sensors():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
 
+        # Werte gegen Limits prüfen
         for sensor, (low, high) in SENSOR_LIMITS.items():
-            result = cursor.execute(f"SELECT live_value FROM {sensor}").fetchone()
+            cursor.execute(f"SELECT live_value FROM {sensor}")
+            result = cursor.fetchone()
             if result:
                 value = result[0]
                 if value < low or value > high:
                     add_log("WARNING", sensor, value)
 
+        # Statusänderungen prüfen
         for sensor_name in SENSOR_STATUS:
-            result = cursor.execute(f"SELECT status FROM {sensor_name}").fetchone()
+            cursor.execute(f"SELECT status FROM {sensor_name}")
+            result = cursor.fetchone()
             if result:
-                status = result[0]  # z.B. "ON" oder "OFF"
-
-                # Nur loggen, wenn sich der Status geändert hat
+                status = result[0]
                 if SENSOR_STATUS[sensor_name] != status:
                     SENSOR_STATUS[sensor_name] = status
                     add_log("INFO", sensor_name, status)
+
+        # Spezielle Bedingung für FlowRate und Pump
+        cursor.execute("SELECT value FROM FlowRate_Sensor")
+        flow_result = cursor.fetchone()
+        cursor.execute("SELECT status FROM Pump")
+        pump_result = cursor.fetchone()
+
+        if flow_result and pump_result:
+            flow_value = flow_result[0]
+            pump_status = pump_result[0]
+            if flow_value == 0 and pump_status == 'online':
+                add_log("WARNING", "FlowRate_Sensor", "Wasser fließt nicht trotz Pumpenbetrieb")
 
 
 # ------------------------------
