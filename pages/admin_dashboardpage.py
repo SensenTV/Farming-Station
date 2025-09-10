@@ -10,7 +10,8 @@ import os
 import csv
 
 DB_PATH = "./SQLite/sensors.db"
-LOG_FILE = "log.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(BASE_DIR, "log.csv")
 log_data = []
 
 # Aktualisiertes Farbschema

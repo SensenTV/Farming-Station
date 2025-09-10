@@ -10,7 +10,7 @@ import os
 import csv
 
 DB_PATH = "./SQLite/sensors.db"
-LOG_FILE = "log.csv"
+LOG_FILE = os.path.join(os.path.dirname(__file__), "log.csv")
 log_data = []
 
 # Aktualisiertes Farbschema
@@ -284,8 +284,7 @@ def user_dashboard_layout():
                     ),
                 ], md=6),
             ], className="mb-4"),
-            dcc.Interval(id="user_log_update", interval=2000, n_intervals=0),
-            html.Div(id="user_dummy_output", style={"display": "none"}),
+            dcc.Interval(id="user_log_update", interval=10000, n_intervals=0),
 
             # Steuerungselemente
             dbc.Row([
@@ -1223,28 +1222,6 @@ def download_sensor_data(n_clicks, sensor_label, number_value, time_unit):
 
 
 # ------------------------------
-# Funktion: Log Datenstruktur
-# ------------------------------
-def add_log(event_type, component, value=None):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = {
-        "timestamp": timestamp,
-        "event": event_type,
-        "component": component,
-        "value": value
-    }
-    log_data.append(log_entry)
-
-    # CSV schreiben (append)
-    file_exists = os.path.isfile(LOG_FILE)
-    with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["timestamp", "event", "component", "value"])
-        if not file_exists:  # Header nur einmal schreiben
-            writer.writeheader()
-        writer.writerow(log_entry)
-
-
-# ------------------------------
 # Funktion: Log Updaten
 # ------------------------------
 @callback(
@@ -1253,7 +1230,7 @@ def add_log(event_type, component, value=None):
     prevent_initial_call=True
 )
 def update_log_text(n):
-    if not os.path.exists(LOG_FILE):
+    if not os.path.exists(LOG_FILE) or os.path.getsize(LOG_FILE) == 0:
         return ""
 
     df = pd.read_csv(LOG_FILE)
@@ -1261,7 +1238,6 @@ def update_log_text(n):
         f"{row['timestamp']} | {row['event']} | {row['component']} | {row['value']}"
         for _, row in df.iterrows()
     ])
-
 
 # ------------------------------
 # Funktion: Log Downloaden
@@ -1276,76 +1252,3 @@ def download_log(n_clicks):
     if os.path.exists(LOG_FILE):
         return dcc.send_file(LOG_FILE)  # CSV liefern
     return dash.no_update  # Keine Änderung, falls Datei fehlt
-
-
-# ------------------------------
-# Funktion: Log leeren
-# ------------------------------
-@callback(
-    Output("user_error_log", "value", allow_duplicate=True),  # Textarea sofort leeren
-    Input("clear-log-btn", "n_clicks"),  # Button klick
-    prevent_initial_call=True
-)
-def clear_log(n_clicks):
-    global log_data
-    log_data = []
-
-    # CSV leeren
-    with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["timestamp", "event", "component", "value"])
-        writer.writeheader()  # Header bleibt bestehen, Inhalt wird gelöscht
-
-    return ""
-
-
-# ------------------------------
-# Funktion: Sensoren überprüfen
-# ------------------------------
-SENSOR_LIMITS = {
-    "EC_Sensor": (0.6, 1.8),
-    "Humidity_Sensor": (20, 80),
-    "PH_Sensor": (5.5, 7.5),
-    "Temp_Sensor": (18, 30),
-    "Ultrasonic_Sensor": (30, 99),
-    "WaterLevel_Sensor": (0, 25),
-}
-SENSOR_STATUS = {
-    "Fan": None,
-    "Light": None,
-    "Pump": None,
-    "FlowRate_Sensor": None
-}
-
-
-def check_sensors():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-
-        for sensor, (low, high) in SENSOR_LIMITS.items():
-            result = cursor.execute(f"SELECT live_value FROM {sensor}").fetchone()
-            if result:
-                value = result[0]
-                if value < low or value > high:
-                    add_log("WARNING", sensor, value)
-
-        for sensor_name in SENSOR_STATUS:
-            result = cursor.execute(f"SELECT status FROM {sensor_name}").fetchone()
-            if result:
-                status = result[0]  # z.B. "ON" oder "OFF"
-
-                # Nur loggen, wenn sich der Status geändert hat
-                if SENSOR_STATUS[sensor_name] != status:
-                    SENSOR_STATUS[sensor_name] = status
-                    add_log("INFO", sensor_name, status)
-
-
-# ------------------------------
-# Funktion: check_sensors aufrufen
-# ------------------------------
-@callback(
-    Output("user_dummy_output", "children"),  # Dummy
-    Input("user_log_update", "n_intervals")
-)
-def periodic_sensor_check(n):
-    check_sensors()  # füllt log_data bei Grenzwertverletzungen
-    return ""
