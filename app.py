@@ -12,7 +12,8 @@ from pages.user_dashboardpage import user_dashboard_layout
 from pages.admin_dashboardpage import admin_dashboard_layout
 from apscheduler.schedulers.background import BackgroundScheduler
 from SQLite import data_deletion
-# from Sensors import sensors
+from Sensors import sensors
+import asyncio
 
 # ----------------- Flask Server -----------------
 server = Flask(__name__)
@@ -126,9 +127,20 @@ def logout(n_clicks_list):
 scheduler = BackgroundScheduler()
 scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
 # scheduler.add_job(sensors.add_to_db, "interval", seconds=10)
-# scheduler.add_job(sensors.sensor_activate, "interval", seconds=5)
+#scheduler.add_job(sensors.sensor_activate, "interval", seconds=5, max_instances=1, coalesce=True, misfire_grace_time=10)
 scheduler.start()
+
+async def sensor_loop():
+    while True:
+        await sensors.sensor_activate()
+        await asyncio.sleep(5)
+
+async def main():
+    asyncio.create_task(sensor_loop())
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, lambda: app.run(debug=True, host='0.0.0.0', port=8050))
 
 # ----------------- App starten -----------------
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8050)
+    asyncio.run(main())
+    #app.run(debug=True, host='0.0.0.0', port=8050)

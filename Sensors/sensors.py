@@ -8,12 +8,14 @@ from adafruit_ads1x15.analog_in import AnalogIn
 import adafruit_hcsr04
 import sqlite3
 import datetime
+from w1thermsensor import W1ThermSensor
 from threading import Lock
+import asyncio
 
 # DHT11 Temperature and Humidity Sensor
 # Verbunden an GPIO 17, Pin 1
 # Initial the dht device, with data pin connected to:
-dhtDevice = adafruit_dht.DHT11(board.D17)
+# dhtDevice = None
 
 # Water Sensor
 # Verbunden an ADS Channel 3
@@ -78,6 +80,8 @@ def add_to_db():
         now = datetime.datetime.now().replace(microsecond=0)
         cursor.execute("INSERT INTO Humidity_Sensor (value, timestamp) VALUES(?,?)",
                        (safe_round(sensor_state["humidity"]),now))
+        cursor.execute("INSERT INTO Temp_Sensor (value, timestamp) VALUES(?,?)",
+                       (safe_round(sensor_state["temperature"]),now))
         cursor.execute("INSERT INTO WaterLevel_Sensor (value, timestamp) VALUES(?,?)",
                        (safe_round(sensor_state["water_level"]),now))
         cursor.execute("INSERT INTO Ultrasonic_Sensor (value, timestamp) VALUES(?,?)",
@@ -90,24 +94,35 @@ def add_to_db():
     conn.commit()
     conn.close()
 
-def sensor_activate():
+def activate_dht_device():
+    dhtDevice = adafruit_dht.DHT11(board.D17)
+
+async def sensor_activate():
     # SQL Initialisieren
     db_path = "./SQLite/sensors.db"
     conn = sqlite3.connect(db_path,check_same_thread=False)
     cursor = conn.cursor()
     db_lock = Lock()
     with db_lock:
-        #while True:
 
         # DHT11 Temperature and Humidity Sensor
         try:
-            # Print the values to the serial port
-            sensor_state["humidity"] = dhtDevice.humidity
-            cursor.execute(
-                "UPDATE Humidity_Sensor SET live_value = ? WHERE rowid = ?",
-                (safe_round(sensor_state["humidity"]), 1)
-            )
-            conn.commit()
+            dhtDevice = None
+
+            if dhtDevice is None:
+                activate_dht_device()
+                print("device is filled")
+                time.sleep(3)
+            else:
+                # Print the values to the serial port
+                sensor_state["humidity"] = dhtDevice.humidity
+                cursor.execute(
+                    "UPDATE Humidity_Sensor SET live_value = ? WHERE rowid = ?",
+                    (safe_round(sensor_state["humidity"]), 1)
+                )
+                conn.commit()
+                print("commited")
+            print("finished")
             
 
         except RuntimeError as error:
@@ -122,6 +137,7 @@ def sensor_activate():
 
         # Water Sensor
         try:
+            print("next")
             # Read ADC Value
             adc_value = ADC.read_adc(ADC_Channel, gain=Gain)
 
@@ -196,5 +212,27 @@ def sensor_activate():
         except KeyboardInterrupt:
             print("\nScript terminated by User.")
 
+        # DF18B20 Temperatur Sensor
+        try:
+            sensor = W1ThermSensor()
+            sensor_state["temperature"] = sensor.get_temperature()  # Standard ist °C
+            cursor.execute(
+                "UPDATE Temp_Sensor SET live_value = ? WHERE rowid = ?",
+                (safe_round(sensor_state["temperature"]), 1)
+            )
+            print("test")
+        
+        except KeyboardInterrupt:
+            print("\nScript terminated by User.")
+
         conn.commit()
         conn.close()
+        print("end")
+
+async def main():
+    while True:
+        await sensor.activate()
+        await asyncio.sleep(5)
+
+if __name__ == "__main__":
+    asyncio.run(main())
