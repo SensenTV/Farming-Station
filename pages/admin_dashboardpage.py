@@ -1,13 +1,11 @@
-from dash import html, Output, Input, dcc, callback, dash, callback_context, ctx
-from datetime import datetime, timedelta
+from dash import html, Output, Input, dcc, callback, callback_context, ctx
+from datetime import timedelta
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash.dependencies import State
-import plotly.graph_objs as go
 from datetime import datetime
 import pandas as pd
 import sqlite3
-import json
 import os
 import csv
 
@@ -17,19 +15,20 @@ log_data = []
 
 # Aktualisiertes Farbschema
 COLOR_SCHEME = {
-    'background': '#ffffff',    # Weißer Hintergrund
-    'card_bg': '#f8f9fa',      # Helles Grau für Karten
-    'accent': '#2563eb',       # Moderne Blau Akzentfarbe
-    'text_primary': '#1e293b', # Dunkles Blau-Grau für Text
-    'text_secondary': '#64748b',# Mittleres Grau für sekundären Text
-    'success': '#22c55e',      # Grün für positive Status
-    'warning': '#f59e0b',      # Orange für Warnungen
-    'border': '#e2e8f0',       # Hellgrau für Borders
-    'graph_grid': '#e2e8f0',   # Hellgrau für Graphenraster
-    'log_bg': '#e5e7eb',       # Leicht dunkleres Grau für Log/Kamera Bereiche
-    'control_bg': '#e5e7eb',   # Leicht dunkleres Grau für Steuerungselemente
+    'background': '#ffffff',  # Weißer Hintergrund
+    'card_bg': '#f8f9fa',  # Helles Grau für Karten
+    'accent': '#2563eb',  # Moderne Blau Akzentfarbe
+    'text_primary': '#1e293b',  # Dunkles Blau-Grau für Text
+    'text_secondary': '#64748b',  # Mittleres Grau für sekundären Text
+    'success': '#22c55e',  # Grün für positive Status
+    'warning': '#f59e0b',  # Orange für Warnungen
+    'border': '#e2e8f0',  # Hellgrau für Borders
+    'graph_grid': '#e2e8f0',  # Hellgrau für Graphenraster
+    'log_bg': '#e5e7eb',  # Leicht dunkleres Grau für Log/Kamera Bereiche
+    'control_bg': '#e5e7eb',  # Leicht dunkleres Grau für Steuerungselemente
     'transparent': 'rgba(0, 0, 0, 0)',  # komplett transparent
 }
+
 
 def admin_dashboard_layout():
     # Lade gespeicherte Zeitstempel
@@ -38,7 +37,7 @@ def admin_dashboard_layout():
     end_time = licht_data.get("end_time")
     pump_data = get_pump_data()
     fan_data = get_fan_data()
-    
+
     system_card = dbc.Card([
         dbc.CardHeader(
             dbc.Row([
@@ -52,7 +51,7 @@ def admin_dashboard_layout():
                     width="auto",
                     className="d-flex justify-content-right",  # Button rechts ausrichten
                 )
-            ]),style={"background-color": COLOR_SCHEME['card_bg']},
+            ]), style={"background-color": COLOR_SCHEME['card_bg']},
         ),
         dbc.CardBody([
             # Aktuelle Werte
@@ -72,7 +71,8 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="fuellstand-graph-btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button("Graph", id="fuellstand-graph-btn", size="sm", color="primary",
+                                           className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -145,7 +145,7 @@ def admin_dashboard_layout():
                                 width=True,
                             ),
                         ], align="center", className="mb-2"),
-                    ], style={"background-color": COLOR_SCHEME['transparent'], "width":"auto", "border": "none"}),
+                    ], style={"background-color": COLOR_SCHEME['transparent'], "width": "auto", "border": "none"}),
                 ], md=2),
 
                 dbc.Col([
@@ -153,7 +153,7 @@ def admin_dashboard_layout():
                         dcc.Graph(
                             id="sensor-graph",
                             style={"height": "300px"},
-                            config = {
+                            config={
                                 "displayModeBar": True,
                                 "modeBarButtonsToRemove": [
                                     "zoom2d", "select2d", "lasso2d",
@@ -170,70 +170,69 @@ def admin_dashboard_layout():
                 dcc.Interval(id='werte-refresh', interval=5000, n_intervals=0)
             ]),
 
-                        dbc.Card([
-                            dbc.CardBody([
-                                dbc.Row(
+            dbc.Card([
+                dbc.CardBody([
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dbc.DropdownMenu(
                                     [
-                                        dbc.Col(
-                                            dbc.DropdownMenu(
-                                                [
-                                                    dbc.DropdownMenuItem("Füllstand",
-                                                                         id="water_level_sensor_dropdown_button",
-                                                                         n_clicks=0),
-                                                    dbc.DropdownMenuItem("PH", id="ph_sensor_dropdown_button", n_clicks=0),
-                                                    dbc.DropdownMenuItem("EC", id="ec_sensor_dropdown_button", n_clicks=0),
-                                                    dbc.DropdownMenuItem("Temp", id="temp_sensor_dropdown_button",
-                                                                         n_clicks=0),
-                                                    dbc.DropdownMenuItem("Luftfeuchtigkeit",
-                                                                         id="humidity_sensor_dropdown_button", n_clicks=0),
-                                                    dbc.DropdownMenuItem("Alle Sensoren", id="all_sensor_dropdown_button",
-                                                                         n_clicks=0),
-                                                ],
-                                                label="Sensoren auswählen",
-                                                id="sensor_dropdown",
-                                                className="me-2",  # kleiner Abstand rechts
-                                            ),
-                                            width="auto",
-                                        ),
-                                        dbc.Col(
-                                            html.P("über die letzten",
-                                                  style={"color": COLOR_SCHEME['text_primary'], "margin": "0"}),
-                                             width="auto",
-                                            className="d-flex align-items-center",  # vertikal mittig
-                                        ),
-                                        dbc.Col(
-                                            html.Div([
-                                                dbc.Input(type="number",min=0,max=365, step=1, id="number" ),
-                                                dbc.Tooltip(
-                                                    "Geben Sie eine Nummer zwischen 0-365",
-                                                    target="number",
-                                                    placement="bottom",
-                                                )
-                                            ]),
-                                            width="auto",
-                                        ),
-                                        dbc.Col(
-                                            dbc.DropdownMenu([
-                                                dbc.DropdownMenuItem("Stunden", id="hour_dropdown_button", n_clicks=0),
-                                                dbc.DropdownMenuItem("Tage", id="days_dropdown_button", n_clicks=0),
-                                            ],
-                                                label="Zeiteinheit",
-                                                id="time_dropdown",
-                                                className="me-2",
-                                            ),
-                                            width="auto",
-                                        ),
-                                        dbc.Col([
-                                            dbc.Button("Herunterladen", id="download_button", n_clicks=0),
-                                            dcc.Download(id="download")
-                                        ], width="auto")
+                                        dbc.DropdownMenuItem("Füllstand",
+                                                             id="water_level_sensor_dropdown_button",
+                                                             n_clicks=0),
+                                        dbc.DropdownMenuItem("PH", id="ph_sensor_dropdown_button", n_clicks=0),
+                                        dbc.DropdownMenuItem("EC", id="ec_sensor_dropdown_button", n_clicks=0),
+                                        dbc.DropdownMenuItem("Temp", id="temp_sensor_dropdown_button",
+                                                             n_clicks=0),
+                                        dbc.DropdownMenuItem("Luftfeuchtigkeit",
+                                                             id="humidity_sensor_dropdown_button", n_clicks=0),
+                                        dbc.DropdownMenuItem("Alle Sensoren", id="all_sensor_dropdown_button",
+                                                             n_clicks=0),
                                     ],
-                                    className="g-1",
-                                    align="center",
-                                )
-                            ])
-                        ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "auto%"}),
-
+                                    label="Sensoren auswählen",
+                                    id="sensor_dropdown",
+                                    className="me-2",  # kleiner Abstand rechts
+                                ),
+                                width="auto",
+                            ),
+                            dbc.Col(
+                                html.P("über die letzten",
+                                       style={"color": COLOR_SCHEME['text_primary'], "margin": "0"}),
+                                width="auto",
+                                className="d-flex align-items-center",  # vertikal mittig
+                            ),
+                            dbc.Col(
+                                html.Div([
+                                    dbc.Input(type="number", min=0, max=365, step=1, id="number"),
+                                    dbc.Tooltip(
+                                        "Geben Sie eine Nummer zwischen 0-365",
+                                        target="number",
+                                        placement="bottom",
+                                    )
+                                ]),
+                                width="auto",
+                            ),
+                            dbc.Col(
+                                dbc.DropdownMenu([
+                                    dbc.DropdownMenuItem("Stunden", id="hour_dropdown_button", n_clicks=0),
+                                    dbc.DropdownMenuItem("Tage", id="days_dropdown_button", n_clicks=0),
+                                ],
+                                    label="Zeiteinheit",
+                                    id="time_dropdown",
+                                    className="me-2",
+                                ),
+                                width="auto",
+                            ),
+                            dbc.Col([
+                                dbc.Button("Herunterladen", id="download_button", n_clicks=0),
+                                dcc.Download(id="download")
+                            ], width="auto")
+                        ],
+                        className="g-1",
+                        align="center",
+                    )
+                ])
+            ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "auto%"}),
 
             html.Hr(style={"border-color": COLOR_SCHEME['border']}),
 
@@ -275,12 +274,12 @@ def admin_dashboard_layout():
                             "border": f"1px solid {COLOR_SCHEME['border']}",
                             "border-radius": "4px"
                         },
-                        children=html.P("Kamera-Feed nicht verfügbar", 
-                                      style={"color": COLOR_SCHEME['text_primary']})
+                        children=html.P("Kamera-Feed nicht verfügbar",
+                                        style={"color": COLOR_SCHEME['text_primary']})
                     ),
                 ], md=6),
             ], className="mb-4"),
-            dcc.Interval(id="log-update", interval=2000, n_intervals=0),
+            dcc.Interval(id="log-update", interval=10000, n_intervals=0),
             html.Div(id="dummy-output", style={"display": "none"}),
 
             # Steuerungselemente
@@ -372,7 +371,8 @@ def admin_dashboard_layout():
 
                             # Zeiteinstellung
                             html.Div([
-                                dbc.Label("Eingeschaltet von:", html_for="licht-start-time", className="me-2 mb-0", style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Label("Eingeschaltet von:", html_for="licht-start-time", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
                                 dmc.TimeInput(
                                     id="licht-start-time",
                                     value=licht_data["start_time"],
@@ -380,7 +380,8 @@ def admin_dashboard_layout():
                                     className="me-2",
                                     size="sm"
                                 ),
-                                dbc.Label("bis:", html_for="licht-end-time", className="me-2 mb-0", style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Label("bis:", html_for="licht-end-time", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
                                 dmc.TimeInput(
                                     id="licht-end-time",
                                     value=licht_data["end_time"],
@@ -414,7 +415,7 @@ def admin_dashboard_layout():
                                 style={"color": COLOR_SCHEME['text_secondary']}
                             )
                         ]),
-                    ],className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
+                    ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
                 ], md=4),
 
                 # Wasserpumpe
@@ -439,7 +440,7 @@ def admin_dashboard_layout():
                                 ),
                             ]),
 
-                            #Pumpeneinstellung
+                            # Pumpeneinstellung
                             html.Div([
                                 dbc.Label("Alle", html_for="pump-intervall", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']}),
@@ -452,7 +453,7 @@ def admin_dashboard_layout():
                                           style={"width": "15%"},
                                           step=1,
                                           value=pump_data["intervall"]
-                                ),
+                                          ),
                                 dbc.Label("Minuten für", html_for="pump-intervall", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']}),
                                 dbc.Input(id="pump-on-for",
@@ -464,16 +465,16 @@ def admin_dashboard_layout():
                                           style={"width": "15%"},
                                           step=1,
                                           value=pump_data["on_for"]
-                                ),
+                                          ),
                                 dbc.Label("Minuten einschalten", html_for="pump-intervall", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']})
                             ], className="d-flex align-items-center mt-2"),
-                                html.Small(
+                            html.Small(
                                 f"Last change: {get_last_change('Pump')}",
                                 id="pumpe-last-change",
                                 className="d-block mt-2",
                                 style={"color": COLOR_SCHEME['text_secondary']}
-                                )
+                            )
                         ])
                     ], className="mb-3", style={"background-color": COLOR_SCHEME['control_bg'], "width": "100%"}),
                 ], md=4),
@@ -495,6 +496,7 @@ def admin_dashboard_layout():
         fluid=True,
         style={"background-color": COLOR_SCHEME['background']}
     )
+
 
 # ------------------------------
 # Funktion: Lichtwerte lesen
@@ -521,6 +523,8 @@ def get_light_data():
             "second_start_time": "00:00",
             "second_end_time": "05:00",
         }
+
+
 # ------------------------------
 # Funktion: Lichtwerte schreiben
 # ------------------------------
@@ -552,12 +556,13 @@ def update_light_data(last_change=None, start_time=None, end_time=None, second_s
     conn.commit()
     conn.close()
 
+
 # ------------------------------
 # Funktion: Lichtbutton aktivieren/deaktivieren
 # ------------------------------
 @callback(
     Output("licht-switch", "value"),
-    Input("licht-interval", "n_intervals") # Dummy Input, nur um beim Laden zu triggern
+    Input("licht-interval", "n_intervals")  # Dummy Input, nur um beim Laden zu triggern
 )
 def update_light_switch(n):
     # Verbindung zur DB öffnen
@@ -575,6 +580,7 @@ def update_light_switch(n):
         return status == "online"
     else:
         return False  # falls kein Eintrag existiert
+
 
 # ------------------------------
 # Funktion: Licht Uhrzeiten aktualisieren
@@ -620,6 +626,7 @@ def get_pump_data():
             "on_for": "10",
         }
 
+
 # ------------------------------
 # Funktion: Pumpenwerte schreiben
 # ------------------------------
@@ -637,12 +644,13 @@ def update_pump_data(last_change=None, intervall=None, on_for=None):
         if on_for is not None:
             cursor.execute("UPDATE Pump SET on_for = ? WHERE ROWID = 1", (on_for,))
     else:
-        cursor.execute("INSERT INTO Pump (last_change, intervall, on_for) VALUES (?, ?, ?)",(
+        cursor.execute("INSERT INTO Pump (last_change, intervall, on_for) VALUES (?, ?, ?)", (
             last_change or "-", intervall or "10", on_for or "10",
         ))
 
     conn.commit()
     conn.close()
+
 
 # ------------------------------
 # Funktion: Pumpenbutton aktivieren/deaktivieren
@@ -668,6 +676,7 @@ def update_pump_switch(n):
     else:
         return False  # falls kein Eintrag existiert
 
+
 # ------------------------------
 # Funktion: Pumpentextfeld aktualisieren
 # ------------------------------
@@ -681,6 +690,7 @@ def update_pump_switch(n):
 def refresh_pump_inputs(n):
     pump_data = get_pump_data()
     return pump_data["intervall"], pump_data["on_for"]
+
 
 # ------------------------------
 # Funktion: Lüfterwerte lesen
@@ -704,6 +714,7 @@ def get_fan_data():
             "on_for": "10",
         }
 
+
 # ------------------------------
 # Funktion: Lüfterwerte schreiben
 # ------------------------------
@@ -721,12 +732,13 @@ def update_fan_data(last_change=None, intervall=None, on_for=None):
         if on_for is not None:
             cursor.execute("UPDATE Fan SET on_for = ? WHERE ROWID = 1", (on_for,))
     else:
-        cursor.execute("INSERT INTO Fan (last_change, intervall, on_for) VALUES (?, ?, ?)",(
+        cursor.execute("INSERT INTO Fan (last_change, intervall, on_for) VALUES (?, ?, ?)", (
             last_change or "-", intervall or "10", on_for or "10",
         ))
 
     conn.commit()
     conn.close()
+
 
 # ------------------------------
 # Funktion: Lüfterbutton aktivieren/deaktivieren
@@ -752,6 +764,7 @@ def update_fan_switch(n):
     else:
         return False  # falls kein Eintrag existiert
 
+
 # ------------------------------
 # Funktion: Lüftertextfeld aktualisieren
 # ------------------------------
@@ -774,6 +787,7 @@ def get_last_change(table_name):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else "-"
+
 
 def get_data_from_db(table_name: str, value_column: str):
     if not table_name or not value_column:
@@ -802,6 +816,7 @@ def get_data_from_db(table_name: str, value_column: str):
 
     return times, values
 
+
 def update_last_change(table_name, value):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -809,7 +824,7 @@ def update_last_change(table_name, value):
     exists = cursor.fetchone()[0] > 0
 
     if exists:
-        cursor.execute(f"UPDATE {table_name} SET last_change = ?", (value,))
+        cursor.execute(f"UPDATE {table_name} SET last_change = ? WHERE ROWID = 1", (value,))
     else:
         cursor.execute(f"INSERT INTO {table_name} (last_change) VALUES (?)", (value,))
 
@@ -840,12 +855,12 @@ def update_last_change(table_name, value):
     ]
 )
 def update_timestamps(
-    luefter_value, pumpe_value,
-    pump_intervall, pump_on_for,
-    start_time, end_time,
-    licht_switch, second_start,
-    second_end, fan_intervall,
-    fan_on_for, n_intervals
+        luefter_value, pumpe_value,
+        pump_intervall, pump_on_for,
+        start_time, end_time,
+        licht_switch, second_start,
+        second_end, fan_intervall,
+        fan_on_for, n_intervals
 ):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -990,6 +1005,7 @@ def lade_aktuelle_werte():
     conn.close()
     return werte
 
+
 @callback(
     [
         Output("fuellstand-wert", "children"),
@@ -1010,8 +1026,9 @@ def update_sensorwerte(n):
         f"{werte['Humidity_Sensor']} %",
     )
 
+
 @callback(
-Output("sensor_dropdown", "label"),
+    Output("sensor_dropdown", "label"),
     Input("water_level_sensor_dropdown_button", "n_clicks"),
     Input("ph_sensor_dropdown_button", "n_clicks"),
     Input("ec_sensor_dropdown_button", "n_clicks"),
@@ -1034,6 +1051,7 @@ def update_sensor_dropdown_label(n1, n2, n3, n4, n5, n6):
 
     label = mapping.get(ctx.triggered_id, "Sensoren auswählen")
     return label
+
 
 @callback(
     Output("time_dropdown", "label"),
@@ -1151,6 +1169,7 @@ def download_sensor_data(n_clicks, sensor_label, number_value, time_unit):
     filename = f"{sensor_label}_{number_value}_{time_unit}.csv"
     return dcc.send_data_frame(df.to_csv, filename, index=False)
 
+
 # ------------------------------
 # Funktion: Log Datenstruktur
 # ------------------------------
@@ -1171,6 +1190,7 @@ def add_log(event_type, component, value=None):
         if not file_exists:  # Header nur einmal schreiben
             writer.writeheader()
         writer.writerow(log_entry)
+
 
 # ------------------------------
 # Funktion: Log Updaten
@@ -1205,12 +1225,13 @@ def download_log(n_clicks):
         return dcc.send_file(LOG_FILE)  # Direkt die bestehende CSV liefern
     return None
 
+
 # ------------------------------
 # Funktion: Log leeren
 # ------------------------------
 @callback(
-    Output("error-log", "value", allow_duplicate=True),          # Textarea sofort leeren
-    Input("clear-log-btn", "n_clicks"),    # Button klick
+    Output("error-log", "value", allow_duplicate=True),  # Textarea sofort leeren
+    Input("clear-log-btn", "n_clicks"),  # Button klick
     prevent_initial_call=True
 )
 def clear_log(n_clicks):
@@ -1223,6 +1244,7 @@ def clear_log(n_clicks):
         writer.writeheader()  # Header bleibt bestehen, Inhalt wird gelöscht
 
     return ""
+
 
 # ------------------------------
 # Funktion: Sensoren überprüfen
@@ -1241,6 +1263,8 @@ SENSOR_STATUS = {
     "Pump": None,
     "FlowRate_Sensor": None
 }
+
+
 def check_sensors():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
@@ -1262,6 +1286,7 @@ def check_sensors():
                     SENSOR_STATUS[sensor_name] = status
                     add_log("INFO", sensor_name, status)
 
+
 # ------------------------------
 # Funktion: check_sensors aufrufen
 # ------------------------------
@@ -1272,4 +1297,3 @@ def check_sensors():
 def periodic_sensor_check(n):
     check_sensors()  # füllt log_data bei Grenzwertverletzungen
     return ""
-

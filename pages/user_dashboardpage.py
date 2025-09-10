@@ -1,13 +1,11 @@
 from dash import html, Output, Input, dcc, callback, dash, callback_context, ctx
-from datetime import datetime, timedelta
+from datetime import timedelta
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash.dependencies import State
-import plotly.graph_objs as go
 from datetime import datetime
 import pandas as pd
 import sqlite3
-import json
 import os
 import csv
 
@@ -17,20 +15,22 @@ log_data = []
 
 # Aktualisiertes Farbschema
 COLOR_SCHEME = {
-    'background': '#ffffff',    # Weißer Hintergrund
-    'card_bg': '#f8f9fa',      # Helles Grau für Karten
-    'accent': '#2563eb',       # Moderne Blau Akzentfarbe
-    'text_primary': '#1e293b', # Dunkles Blau-Grau für Text
-    'text_secondary': '#64748b',# Mittleres Grau für sekundären Text
-    'success': '#22c55e',      # Grün für positive Status
-    'warning': '#f59e0b',      # Orange für Warnungen
-    'border': '#e2e8f0',       # Hellgrau für Borders
-    'graph_grid': '#e2e8f0',   # Hellgrau für Graphenraster
-    'log_bg': '#e5e7eb',       # Leicht dunkleres Grau für Log/Kamera Bereiche
-    'control_bg': '#e5e7eb',   # Leicht dunkleres Grau für Steuerungselemente
+    'background': '#ffffff',  # Weißer Hintergrund
+    'card_bg': '#f8f9fa',  # Helles Grau für Karten
+    'accent': '#2563eb',  # Moderne Blau Akzentfarbe
+    'text_primary': '#1e293b',  # Dunkles Blau-Grau für Text
+    'text_secondary': '#64748b',  # Mittleres Grau für sekundären Text
+    'success': '#22c55e',  # Grün für positive Status
+    'warning': '#f59e0b',  # Orange für Warnungen
+    'border': '#e2e8f0',  # Hellgrau für Borders
+    'graph_grid': '#e2e8f0',  # Hellgrau für Graphenraster
+    'log_bg': '#e5e7eb',  # Leicht dunkleres Grau für Log/Kamera Bereiche
+    'control_bg': '#e5e7eb',  # Leicht dunkleres Grau für Steuerungselemente
     'transparent': 'rgba(0, 0, 0, 0)',  # komplett transparent
-    'control_bg_opaque': '#f0f0f0'
+    'control_bg_opaque': '#f0f0f0',
+    'bg_user_licht': 'rgba(169, 169, 169, 0.9)'
 }
+
 
 def user_dashboard_layout():
     # Lade gespeicherte Zeitstempel
@@ -45,7 +45,7 @@ def user_dashboard_layout():
             dbc.Row([
                 dbc.Col(
                     html.H3("System 1", style={"color": COLOR_SCHEME['text_primary']}),
-                    width=2,
+                    width=11,
                     style={"background-color": COLOR_SCHEME['card_bg']},
                 ),
                 dbc.Col(
@@ -53,7 +53,7 @@ def user_dashboard_layout():
                     width="auto",
                     className="d-flex justify-content-right",  # Button rechts ausrichten
                 )
-            ]),style={"background-color": COLOR_SCHEME['card_bg']},
+            ]), style={"background-color": COLOR_SCHEME['card_bg']},
         ),
         dbc.CardBody([
             # Aktuelle Werte
@@ -91,7 +91,8 @@ def user_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="user_ph_graph_btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button("Graph", id="user_ph_graph_btn", size="sm", color="primary",
+                                           className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -108,7 +109,8 @@ def user_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="user_ec_graph_btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button("Graph", id="user_ec_graph_btn", size="sm", color="primary",
+                                           className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -125,7 +127,8 @@ def user_dashboard_layout():
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="user_temp_graph_btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button("Graph", id="user_temp_graph_btn", size="sm", color="primary",
+                                           className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -142,7 +145,8 @@ def user_dashboard_layout():
                                 width="auto"
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="user_luft_graph_btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button("Graph", id="user_luft_graph_btn", size="sm", color="primary",
+                                           className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -321,7 +325,7 @@ def user_dashboard_layout():
                                           max=120,
                                           style={"width": "15%"},
                                           step=1,
-                                          value=fan_data["intervall"],
+                                          value=10,
                                           disabled=True,
                                           ),
                                 dbc.Label("Minuten für", html_for="user_fan_intervall", className="me-2 mb-0",
@@ -334,7 +338,7 @@ def user_dashboard_layout():
                                           max=120,
                                           style={"width": "15%"},
                                           step=1,
-                                          value=fan_data["on_for"],
+                                          value=10,
                                           disabled=True,
                                           ),
                                 dbc.Label("Minuten einschalten", html_for="user_fan_intervall", className="me-2 mb-0",
@@ -380,9 +384,19 @@ def user_dashboard_layout():
                                     id="user_licht_start_time",
                                     value=licht_data["start_time"],
                                     placeholder="HH:mm",
-                                    className="me-2",
+                                    className="me-1 bg_user_licht",
                                     size="sm",
                                     readOnly=True,
+                                    styles={
+                                        "input": {
+                                            "backgroundColor": "rgba(169, 169, 169, 0.9)",
+                                            "color": "#000000",
+                                            "border": "none",
+                                            "borderRadius": "6px",
+                                            "padding": "5px 12px",
+                                            "fontWeight": 100,
+                                        }
+                                    },
                                 ),
                                 dbc.Label("bis:", html_for="user_licht_end_time", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']}),
@@ -393,6 +407,16 @@ def user_dashboard_layout():
                                     className="me-2",
                                     size="sm",
                                     readOnly=True,
+                                    styles={
+                                        "input": {
+                                            "backgroundColor": "rgba(169, 169, 169, 0.9)",
+                                            "color": "#000000",
+                                            "border": "none",
+                                            "borderRadius": "6px",
+                                            "padding": "5px 12px",
+                                            "fontWeight": 100,
+                                        }
+                                    },
                                 ),
                                 dbc.Label("sowie von:", html_for="user_second_licht_start_time", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']}),
@@ -403,6 +427,16 @@ def user_dashboard_layout():
                                     className="me-2",
                                     size="sm",
                                     readOnly=True,
+                                    styles={
+                                        "input": {
+                                            "backgroundColor": "rgba(169, 169, 169, 0.9)",
+                                            "color": "#000000",
+                                            "border": "none",
+                                            "borderRadius": "6px",
+                                            "padding": "5px 12px",
+                                            "fontWeight": 100,
+                                        }
+                                    },
                                 ),
                                 dbc.Label("bis:", html_for="user_second_licht_end_time", className="me-2 mb-0",
                                           style={"color": COLOR_SCHEME['text_primary']}),
@@ -413,6 +447,16 @@ def user_dashboard_layout():
                                     className="me-2",
                                     size="sm",
                                     readOnly=True,
+                                    styles={
+                                        "input": {
+                                            "backgroundColor": "rgba(169, 169, 169, 0.9)",
+                                            "color": "#000000",
+                                            "border": "none",
+                                            "borderRadius": "6px",
+                                            "padding": "5px 12px",
+                                            "fontWeight": 100,
+                                        }
+                                    },
                                 ),
                             ], className="d-flex align-items-center mt-2"),
                             html.Small(
@@ -591,6 +635,7 @@ def update_light_switch(n):
     else:
         return False  # falls kein Eintrag existiert
 
+
 # ------------------------------
 # Funktion: Licht Uhrzeiten aktualisieren
 # ------------------------------
@@ -611,6 +656,7 @@ def refresh_light_times(n):
         light_data["second_start_time"],
         light_data["second_end_time"],
     )
+
 
 # ------------------------------
 # Funktion: Pumpenwerte lesen
@@ -684,6 +730,7 @@ def update_pump_switch(n):
     else:
         return False  # falls kein Eintrag existiert
 
+
 # ------------------------------
 # Funktion: Pumpentextfeld aktualisieren
 # ------------------------------
@@ -697,6 +744,7 @@ def update_pump_switch(n):
 def refresh_pump_inputs(n):
     pump_data = get_pump_data()
     return pump_data["intervall"], pump_data["on_for"]
+
 
 # ------------------------------
 # Funktion: Lüfterwerte lesen
@@ -770,6 +818,7 @@ def update_fan_switch(n):
     else:
         return False  # falls kein Eintrag existiert
 
+
 # ------------------------------
 # Funktion: Lüftertextfeld aktualisieren
 # ------------------------------
@@ -829,7 +878,7 @@ def update_last_change(table_name, value):
     exists = cursor.fetchone()[0] > 0
 
     if exists:
-        cursor.execute(f"UPDATE {table_name} SET last_change = ?", (value,))
+        cursor.execute(f"UPDATE {table_name} SET last_change = ? WHERE ROWID = 1", (value,))
     else:
         cursor.execute(f"INSERT INTO {table_name} (last_change) VALUES (?)", (value,))
 
@@ -1300,4 +1349,3 @@ def check_sensors():
 def periodic_sensor_check(n):
     check_sensors()  # füllt log_data bei Grenzwertverletzungen
     return ""
-

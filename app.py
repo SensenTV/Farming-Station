@@ -69,6 +69,9 @@ def display_page(pathname):
     prevent_initial_call=True
 )
 def handle_login(n_clicks, username, password):
+    if not n_clicks:  # Kein Klick, nichts anzeigen
+        raise dash.exceptions.PreventUpdate
+
     if not username or not password:
         return dbc.Alert("Bitte Benutzername und Passwort eingeben.", color="danger"), dash.no_update
 
