@@ -1,10 +1,9 @@
-
-# cd ~/Desktop/Python/sensoren_test
-# source venv/bin/activate
-# python3 DS18B20.py
-
 from w1thermsensor import W1ThermSensor
 import time
+
+# DS18B20 Sensor für Temperatur
+# Verbunden an GPIO 4 Pin 7
+
 
 while True:
     try:

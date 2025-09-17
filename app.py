@@ -13,6 +13,7 @@ from pages.admin_dashboardpage import admin_dashboard_layout
 from apscheduler.schedulers.background import BackgroundScheduler
 from SQLite import data_deletion
 from Sensors import sensors
+from Sensors.dht_sensor_test import read_dht
 import asyncio
 
 # ----------------- Flask Server -----------------
@@ -63,7 +64,7 @@ def display_page(pathname):
 # ----------------- Login Callback -----------------
 @app.callback(
     Output('login-output', 'children'),
-    Output('url', 'pathname',allow_duplicate=True),
+    Output('url', 'pathname', allow_duplicate=True),
     Input('login-button', 'n_clicks'),
     State('username', 'value'),
     State('password', 'value'),
@@ -112,7 +113,7 @@ def handle_register(n_clicks, username, password, confirm_password):
 
 # ----------------- Logout Callback -----------------
 @app.callback(
-    Output('url', 'pathname',allow_duplicate=True),
+    Output('url', 'pathname', allow_duplicate=True),
     Input({'type': 'logout-btn', 'index': ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
@@ -130,15 +131,30 @@ scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
 #scheduler.add_job(sensors.sensor_activate, "interval", seconds=5, max_instances=1, coalesce=True, misfire_grace_time=10)
 scheduler.start()
 
+async def dht_loop():
+    while True:
+        await read_dht()
+        await asyncio.sleep(5)
+
 async def sensor_loop():
     while True:
         await sensors.sensor_activate()
         await asyncio.sleep(5)
 
+async def db_add_loop():
+    while True:
+        await sensors.add_to_db()
+        await asyncio.sleep(100)
+
 async def main():
+    # Sensor-Loop im Hintergrund starten
     asyncio.create_task(sensor_loop())
+    asyncio.create_task(dht_loop())
+    asyncio.create_task(db_add_loop())
+
+    # Dash im Executor laufen lassen (blockierend)
     loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, lambda: app.run(debug=True, host='0.0.0.0', port=8050))
+    await loop.run_in_executor(None, lambda: app.run(host='0.0.0.0', port=8050))
 
 # ----------------- App starten -----------------
 if __name__ == '__main__':
