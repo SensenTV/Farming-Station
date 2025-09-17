@@ -144,7 +144,7 @@ async def sensor_loop():
 async def db_add_loop():
     while True:
         await sensors.add_to_db()
-        await asyncio.sleep(100)
+        await asyncio.sleep(60)
 
 async def main():
     # Sensor-Loop im Hintergrund starten
