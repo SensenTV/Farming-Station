@@ -13,7 +13,6 @@ from pages.admin_dashboardpage import admin_dashboard_layout
 from apscheduler.schedulers.background import BackgroundScheduler
 from SQLite import data_deletion
 from Sensors import sensors
-from Sensors.dht_sensor_test import read_dht
 import asyncio
 
 # ----------------- Flask Server -----------------
@@ -21,7 +20,8 @@ server = Flask(__name__)
 server.secret_key = "ein_geheimes_schluesselwort"
 
 # ----------------- Dash App -----------------
-app = Dash(__name__, server=server, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.CYBORG])
+app = Dash(__name__, server=server, suppress_callback_exceptions=True,
+           external_stylesheets=[dbc.themes.CYBORG])
 app.title = "Farming Station"
 
 # ----------------- Layout -----------------
@@ -34,12 +34,15 @@ app.layout = dmc.MantineProvider(
             html.Div(id='page-content'),
         ], fluid=True),
         html.Div([
-            html.Meta(name='viewport', content='width=device-width, initial-scale=1.0, shrink-to-fit=yes'),
+            html.Meta(
+                name='viewport', content='width=device-width, initial-scale=1.0, shrink-to-fit=yes'),
         ]),
     ]
 )
 
 # ----------------- Page Routing -----------------
+
+
 @app.callback(
     Output('page-content', 'children'),
     Input('url', 'pathname'),
@@ -62,6 +65,8 @@ def display_page(pathname):
     return login_layout()
 
 # ----------------- Login Callback -----------------
+
+
 @app.callback(
     Output('login-output', 'children'),
     Output('url', 'pathname', allow_duplicate=True),
@@ -86,6 +91,8 @@ def handle_login(n_clicks, username, password):
     return dbc.Alert("Benutzername oder Passwort falsch", color="danger"), dash.no_update
 
 # ----------------- Register Callback -----------------
+
+
 @app.callback(
     Output('register-output', 'children'),
     Input('register-button', 'n_clicks'),
@@ -100,11 +107,13 @@ def handle_register(n_clicks, username, password, confirm_password):
     if password != confirm_password:
         return dbc.Alert("Die Passwörter stimmen nicht überein.", color="danger")
 
-    hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    hashed_pw = bcrypt.hashpw(password.encode(
+        'utf-8'), bcrypt.gensalt()).decode('utf-8')
     try:
         conn = sqlite3.connect('SQLite/users.db')
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO user (username, password) VALUES (?, ?)", (username, hashed_pw))
+        cursor.execute(
+            "INSERT INTO user (username, password) VALUES (?, ?)", (username, hashed_pw))
         conn.commit()
         conn.close()
         return dbc.Alert("Registrierung erfolgreich! Du kannst dich jetzt einloggen.", color="success")
@@ -112,6 +121,8 @@ def handle_register(n_clicks, username, password, confirm_password):
         return dbc.Alert("Benutzername existiert bereits.", color="danger")
 
 # ----------------- Logout Callback -----------------
+
+
 @app.callback(
     Output('url', 'pathname', allow_duplicate=True),
     Input({'type': 'logout-btn', 'index': ALL}, 'n_clicks'),
@@ -124,27 +135,32 @@ def logout(n_clicks_list):
     flask_session.clear()
     return '/'
 
+
 # ----------------- Scheduler -----------------
 scheduler = BackgroundScheduler()
 scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
 # scheduler.add_job(sensors.add_to_db, "interval", seconds=10)
-#scheduler.add_job(sensors.sensor_activate, "interval", seconds=5, max_instances=1, coalesce=True, misfire_grace_time=10)
+# scheduler.add_job(sensors.sensor_activate, "interval", seconds=5, max_instances=1, coalesce=True, misfire_grace_time=10)
 scheduler.start()
+
 
 async def dht_loop():
     while True:
-        await read_dht()
+        await sensors.read_dht()
         await asyncio.sleep(5)
+
 
 async def sensor_loop():
     while True:
         await sensors.sensor_activate()
         await asyncio.sleep(5)
 
+
 async def db_add_loop():
     while True:
         await sensors.add_to_db()
         await asyncio.sleep(60)
+
 
 async def main():
     # Sensor-Loop im Hintergrund starten
@@ -159,4 +175,4 @@ async def main():
 # ----------------- App starten -----------------
 if __name__ == '__main__':
     asyncio.run(main())
-    #app.run(debug=True, host='0.0.0.0', port=8050)
+    # app.run(debug=True, host='0.0.0.0', port=8050)
