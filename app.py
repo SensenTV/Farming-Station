@@ -168,6 +168,9 @@ async def main():
     asyncio.create_task(dht_loop())
     asyncio.create_task(db_add_loop())
 
+    # Pumpenloop starten
+    await sensors.start_pump_loop()
+
     # Dash im Executor laufen lassen (blockierend)
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, lambda: app.run(host='0.0.0.0', port=8050))

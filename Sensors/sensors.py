@@ -11,6 +11,14 @@ import datetime
 from w1thermsensor import W1ThermSensor
 from threading import Lock
 import asyncio
+from gpiozero import PWMLED
+from gpiozero import LED
+from gpiozero import Button
+
+# Led initialisierung
+pump_led = PWMLED(12)     # GPIO 12 (Pin 32)
+# led_Y = PWMLED(13)     # GPIO 13 (Pin 33)
+# led_G = LED(17)        # GPIO 17 (Pin 11)
 
 # DHT11 Temperature and Humidity Sensor
 # Verbunden an GPIO 17, Pin 1
@@ -56,6 +64,26 @@ ads = ADS.ADS1115(i2c)
 ads.gain = 1
 temperature = 25
 
+# Flowrate Lore
+PIN = 24
+K = 450.0  # Impulse pro Liter
+
+pulse_count = 0
+total_pulses = 0
+
+
+def count_pulse():
+    global pulse_count, total_pulses
+    pulse_count += 1
+    total_pulses += 1
+
+
+# Button mit internem Pull-up (Sensor ist open-collector -> benötigt Pull-up)
+waterflow = Button(PIN, pull_up=True)
+waterflow.when_pressed = count_pulse  # bei Flanke (aktiv low) zählt
+
+PRINT_INTERVAL = 1.0  # Sekunden
+
 sensor_state = {
     "humidity": None,
     "temperature": None,
@@ -86,6 +114,24 @@ async def safe_db_execute(query, params=()):
         cursor.execute(query, params)
         conn.commit()
 
+# Helfer für SELECT-Abfragen
+
+
+async def safe_db_fetchone(query, params=()):
+    async with db_lock:
+        cursor.execute(query, params)
+        return cursor.fetchone()
+
+# Pumpenkonfiguration aus DB holen
+
+
+async def get_pump_config():
+    """Liest Intervall und Dauer (on_for) aus der DB"""
+    row = await safe_db_fetchone("SELECT intervall, on_for FROM Pump LIMIT 1;")
+    if row:
+        return row[0], row[1]
+    return 10, 5  # fallback falls keine Werte in DB
+
 # Macht Werte in die Datenbank nach 2 Stunden
 
 
@@ -96,8 +142,6 @@ async def add_to_db():
                           (safe_round(sensor_state["humidity"]), now))
     await safe_db_execute("INSERT INTO Temp_Sensor (value, timestamp) VALUES(?,?)",
                           (safe_round(sensor_state["temperature"]), now))
-    await safe_db_execute("INSERT INTO WaterLevel_Sensor (value, timestamp) VALUES(?,?)",
-                          (safe_round(sensor_state["water_level"]), now))
     await safe_db_execute("INSERT INTO Ultrasonic_Sensor (value, timestamp) VALUES(?,?)",
                           (safe_round(sensor_state["ultrasonic"]), now))
     await safe_db_execute("INSERT INTO PH_Sensor (value, timestamp) VALUES(?,?)",
@@ -221,3 +265,53 @@ async def read_dht():
 
     finally:
         print("read_dht fertig")
+
+
+async def pump_and_waterflow_cycle():
+    global pulse_count, total_pulses
+    """
+    Steuert die Pumpe (LED) zyklisch
+    und überwacht gleichzeitig den Wasserfluss.
+    """
+    while True:
+        # Hole Pumpenkonfiguration (Intervall + Dauer)
+        intervall, dauer = await get_pump_config()
+        print(f"⏱️ Warte {intervall*60}s bis zum nächsten Pumpenlauf...")
+        await asyncio.sleep(intervall * 60)
+
+        # Pumpe EIN
+        print(f"💡 Pumpe EIN für {dauer*60}s")
+        pump_led.on()
+        await safe_db_execute("UPDATE Pump SET status = ? WHERE rowid = 1", ("online",))
+
+        # Flowrate überwachen während die Pumpe läuft
+        start_time = time.time()
+        last_time = start_time
+
+        while time.time() - start_time < dauer * 60:
+            await asyncio.sleep(PRINT_INTERVAL)
+            now = time.time()
+            elapsed = now - last_time
+            last_time = now
+
+            pulses = pulse_count
+            pulse_count = 0
+
+            flow_l_min = (pulses / elapsed) * (60.0 / K) if pulses else 0.0
+            print(f"💧 Durchfluss: {flow_l_min:.3f} L/min | Impulse: {pulses}")
+
+            # Werte in die DB schreiben
+            await safe_db_execute(
+                "UPDATE FlowRate_Sensor SET value = ?, status = ? WHERE rowid = 1",
+                (flow_l_min, "online")
+            )
+
+        # Pumpe AUS
+        pump_led.off()
+        print("💡 Pumpe AUS")
+        await safe_db_execute("UPDATE Pump SET status = ? WHERE rowid = 1", ("offline",))
+        await safe_db_execute("UPDATE FlowRate_Sensor SET status = ? WHERE rowid = 1", ("offline",))
+
+
+async def start_pump_loop():
+    asyncio.create_task(pump_and_waterflow_cycle())

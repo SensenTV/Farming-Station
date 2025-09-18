@@ -1,11 +1,10 @@
 import time
-from gpiozero import DigitalOutputDevice
+from gpiozero import PWMOutputDevice
 
-fan = DigitalOutputDevice(26) #GPIO26 Pin 37
+fan_pin = 26  # GPIO-Pin am HW-517
+fan = PWMOutputDevice(fan_pin)  # automatisch über pigpio
 
-fan.on()
-print(fan.value)
-time.sleep(5)
-fan.off()
-
-
+while True:
+    # Einschalten
+    fan.value = 1.0  # Vollgas
+    time.sleep(5)
