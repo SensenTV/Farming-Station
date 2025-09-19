@@ -171,6 +171,12 @@ async def main():
     # Pumpenloop starten
     await sensors.start_pump_loop()
 
+    # Lüfterloop starten
+    await sensors.start_fan_loop()
+
+    # Licht starten
+    await sensors.start_light()
+
     # Dash im Executor laufen lassen (blockierend)
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, lambda: app.run(host='0.0.0.0', port=8050))

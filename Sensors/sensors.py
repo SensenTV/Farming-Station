@@ -7,18 +7,23 @@ import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 import adafruit_hcsr04
 import sqlite3
-import datetime
+from datetime import datetime, time
+import time
 from w1thermsensor import W1ThermSensor
 from threading import Lock
 import asyncio
 from gpiozero import PWMLED
 from gpiozero import LED
 from gpiozero import Button
+from gpiozero import PWMOutputDevice
 
 # Led initialisierung
 pump_led = PWMLED(12)     # GPIO 12 (Pin 32)
-# led_Y = PWMLED(13)     # GPIO 13 (Pin 33)
-# led_G = LED(17)        # GPIO 17 (Pin 11)
+light_led = PWMLED(6)     # GPIO 13 (Pin 33)
+
+# Fan initialisierung
+fan_pin = 26  # GPIO-Pin am HW-517
+fan = PWMOutputDevice(fan_pin)  # automatisch über pigpio
 
 # DHT11 Temperature and Humidity Sensor
 # Verbunden an GPIO 17, Pin 1
@@ -40,6 +45,9 @@ Max_ADC_Value = 32767
 # Trigger pin verbunden an GPIO 22, Pin 15
 # Initial Device
 sonar = adafruit_hcsr04.HCSR04(trigger_pin=board.D27, echo_pin=board.D22)
+# Tankparameter in cm
+d_max = 50  # Abstand bei leerem Tank
+d_min = 5   # Abstand bei vollem Tank
 
 # PH Sensor
 # Verbunden an ADS Channel 2
@@ -83,6 +91,13 @@ waterflow = Button(PIN, pull_up=True)
 waterflow.when_pressed = count_pulse  # bei Flanke (aktiv low) zählt
 
 PRINT_INTERVAL = 1.0  # Sekunden
+
+
+def parse_time(value):
+    if isinstance(value, str):
+        return datetime.strptime(value, "%H:%M").time()
+    return value
+
 
 sensor_state = {
     "humidity": None,
@@ -130,14 +145,43 @@ async def get_pump_config():
     row = await safe_db_fetchone("SELECT intervall, on_for FROM Pump LIMIT 1;")
     if row:
         return row[0], row[1]
-    return 10, 5  # fallback falls keine Werte in DB
+    return 10, 10  # fallback falls keine Werte in DB
+
+# Lüfterkonfiguration aus DB holen
+
+
+async def get_fan_config():
+    """Liest Intervall und Dauer (on_for) aus der DB"""
+    row = await safe_db_fetchone("SELECT intervall, on_for FROM Fan LIMIT 1;")
+    if row:
+        return row[0], row[1]
+    return 120, 60  # fallback falls keine Werte in DB
+
+
+async def get_light_config():
+    """Liest die Uhrzeiten von wann bis wann das Licht (LED) gestartet wird"""
+    row1 = await safe_db_fetchone("SELECT start_time, end_time FROM Light WHERE ROWID = 1;")
+    row2 = await safe_db_fetchone("SELECT start_time, end_time FROM Light WHERE ROWID = 2;")
+
+    if row1:
+        start1, end1 = map(parse_time, row1)
+    else:
+        start1, end1 = time(12, 0), time(17, 0)  # Default 12:00–17:00
+
+    if row2:
+        start2, end2 = map(parse_time, row2)
+    else:
+        start2, end2 = time(0, 0), time(5, 0)    # Default 00:00–05:00
+
+    return (start1, end1), (start2, end2)
+
 
 # Macht Werte in die Datenbank nach 2 Stunden
 
 
 async def add_to_db():
 
-    now = datetime.datetime.now().replace(microsecond=0)
+    now = datetime.now().replace(microsecond=0)
     await safe_db_execute("INSERT INTO Humidity_Sensor (value, timestamp) VALUES(?,?)",
                           (safe_round(sensor_state["humidity"]), now))
     await safe_db_execute("INSERT INTO Temp_Sensor (value, timestamp) VALUES(?,?)",
@@ -166,10 +210,20 @@ async def sensor_activate():
 
     # Ultrasonic Sensor for Water level
     try:
-        update_sensor_state("ultrasonic", sonar.distance)
+        # gemessener Abstand vom Sensor
+        distance = sonar.distance
+
+        # Füllstand in Prozent berechnen
+        fill_percent = (d_max - distance) / (d_max - d_min) * 100
+        fill_percent = max(0, min(100, fill_percent))  # Begrenzen auf 0-100%
+
+        # Sensorwert aktualisieren
+        update_sensor_state("ultrasonic", fill_percent)
+
+        # In DB speichern
         await safe_db_execute(
             "UPDATE Ultrasonic_Sensor SET live_value =? WHERE rowid = ?",
-            (safe_round(sensor_state["ultrasonic"]), 1)
+            (safe_round(fill_percent), 1)
         )
 
     except RuntimeError:
@@ -276,11 +330,11 @@ async def pump_and_waterflow_cycle():
     while True:
         # Hole Pumpenkonfiguration (Intervall + Dauer)
         intervall, dauer = await get_pump_config()
-        print(f"⏱️ Warte {intervall*60}s bis zum nächsten Pumpenlauf...")
+        print(f"⏱️ Warte {intervall}m bis zum nächsten Pumpenlauf...")
         await asyncio.sleep(intervall * 60)
 
         # Pumpe EIN
-        print(f"💡 Pumpe EIN für {dauer*60}s")
+        print(f"💡 Pumpe EIN für {dauer}m")
         pump_led.on()
         await safe_db_execute("UPDATE Pump SET status = ? WHERE rowid = 1", ("online",))
 
@@ -315,3 +369,51 @@ async def pump_and_waterflow_cycle():
 
 async def start_pump_loop():
     asyncio.create_task(pump_and_waterflow_cycle())
+
+
+async def fan_cycle():
+    """
+    Steuert die Fan zyklisch
+    """
+    while True:
+        intervall, dauer = await get_fan_config()
+        print(f"Warte {intervall}m bis zum nächsten Lüfterstart...")
+        await asyncio.sleep(intervall*60)
+
+        print("Lüfter an")
+        fan.value = 1.0
+        await safe_db_execute("UPDATE Fan SET status = ? WHERE rowid = 1", ("online",))
+        await asyncio.sleep(dauer*60)
+        fan.value = 0.0
+        await safe_db_execute("UPDATE Fan SET status = ? WHERE rowid = 1", ("offline",))
+        print("Lüfter aus")
+
+
+async def start_fan_loop():
+    asyncio.create_task(fan_cycle())
+
+
+async def light_cycle():
+    """
+    Steuert das Licht nach der aktuellen Uhrzeit anhand der gespeicherten Konfiguration.
+    """
+    while True:
+        (start1, end1), (start2, end2) = await get_light_config()
+        now = datetime.now().time()
+
+        def in_range(start, end, current):
+            if start <= end:
+                return start <= current <= end
+            else:
+                return current >= start or current <= end
+
+        if in_range(start1, end1, now) or in_range(start2, end2, now):
+            light_led.on()
+        else:
+            light_led.off()
+
+        await asyncio.sleep(1)
+
+
+async def start_light():
+    asyncio.create_task(light_cycle())

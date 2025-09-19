@@ -8,6 +8,10 @@ import pandas as pd
 import sqlite3
 import os
 import csv
+import cv2
+import base64
+from io import BytesIO
+from dash.dependencies import Input, Output
 
 DB_PATH = "./SQLite/sensors.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,12 +47,14 @@ def admin_dashboard_layout():
         dbc.CardHeader(
             dbc.Row([
                 dbc.Col(
-                    html.H3("System 1", style={"color": COLOR_SCHEME['text_primary']}),
+                    html.H3("System 1", style={
+                            "color": COLOR_SCHEME['text_primary']}),
                     width=11,
                     style={"background-color": COLOR_SCHEME['card_bg']},
                 ),
                 dbc.Col(
-                    dbc.Button("Logout", id={'type': 'logout-btn', 'index': 'admin'}, color="primary", outline=True),
+                    dbc.Button("Logout", id={
+                               'type': 'logout-btn', 'index': 'admin'}, color="primary", outline=True),
                     width="auto",
                     className="d-flex justify-content-right",  # Button rechts ausrichten
                 )
@@ -56,18 +62,21 @@ def admin_dashboard_layout():
         ),
         dbc.CardBody([
             # Aktuelle Werte
-            html.H4("Aktuelle Werte:", className="mb-3", style={"color": COLOR_SCHEME['text_primary']}),
+            html.H4("Aktuelle Werte:", className="mb-3",
+                    style={"color": COLOR_SCHEME['text_primary']}),
 
             dbc.Row([
                 dbc.Col([
                     dbc.Card([
                         dbc.Row([
                             dbc.Col(
-                                html.Strong("Füllstand: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                html.Strong("Füllstand: ", style={
+                                            "color": COLOR_SCHEME['text_primary']}),
                                 width="auto"
                             ),
                             dbc.Col(
-                                html.Span("-", id="fuellstand-wert", style={"color": COLOR_SCHEME['accent']}),
+                                html.Span("-", id="fuellstand-wert",
+                                          style={"color": COLOR_SCHEME['accent']}),
                                 className="d-flex justify-content-left",
                                 width=True,
                             ),
@@ -81,16 +90,19 @@ def admin_dashboard_layout():
 
                         dbc.Row([
                             dbc.Col(
-                                html.Strong("PH: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                html.Strong("PH: ", style={
+                                            "color": COLOR_SCHEME['text_primary']}),
                                 width="auto"
                             ),
                             dbc.Col(
-                                html.Span("-", id="ph-wert", style={"color": COLOR_SCHEME['accent']}),
+                                html.Span(
+                                    "-", id="ph-wert", style={"color": COLOR_SCHEME['accent']}),
                                 className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="ph-graph-btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button(
+                                    "Graph", id="ph-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -98,16 +110,19 @@ def admin_dashboard_layout():
 
                         dbc.Row([
                             dbc.Col(
-                                html.Strong("EC: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                html.Strong("EC: ", style={
+                                            "color": COLOR_SCHEME['text_primary']}),
                                 width="auto"
                             ),
                             dbc.Col(
-                                html.Span("-", id="ec-wert", style={"color": COLOR_SCHEME['accent']}),
+                                html.Span(
+                                    "-", id="ec-wert", style={"color": COLOR_SCHEME['accent']}),
                                 className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="ec-graph-btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button(
+                                    "Graph", id="ec-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -115,16 +130,19 @@ def admin_dashboard_layout():
 
                         dbc.Row([
                             dbc.Col(
-                                html.Strong("Temp: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                html.Strong("Temp: ", style={
+                                            "color": COLOR_SCHEME['text_primary']}),
                                 width="auto"
                             ),
                             dbc.Col(
-                                html.Span("-", id="temp-wert", style={"color": COLOR_SCHEME['accent']}),
+                                html.Span(
+                                    "-", id="temp-wert", style={"color": COLOR_SCHEME['accent']}),
                                 className="d-flex justify-content-left",
                                 width=True,
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="temp-graph-btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button(
+                                    "Graph", id="temp-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -132,16 +150,19 @@ def admin_dashboard_layout():
 
                         dbc.Row([
                             dbc.Col(
-                                html.Strong("Luftfeuchtigkeit: ", style={"color": COLOR_SCHEME['text_primary']}),
+                                html.Strong("Luftfeuchtigkeit: ", style={
+                                            "color": COLOR_SCHEME['text_primary']}),
                                 width="auto"
                             ),
                             dbc.Col(
-                                html.Span("-", id="luft-wert", style={"color": COLOR_SCHEME['accent']}),
+                                html.Span(
+                                    "-", id="luft-wert", style={"color": COLOR_SCHEME['accent']}),
                                 className="d-flex justify-content-left",
                                 width="auto"
                             ),
                             dbc.Col(
-                                dbc.Button("Graph", id="luft-graph-btn", size="sm", color="primary", className="ms-2"),
+                                dbc.Button(
+                                    "Graph", id="luft-graph-btn", size="sm", color="primary", className="ms-2"),
                                 className="d-flex justify-content-end",
                                 width=True,
                             ),
@@ -181,8 +202,10 @@ def admin_dashboard_layout():
                                         dbc.DropdownMenuItem("Füllstand",
                                                              id="water_level_sensor_dropdown_button",
                                                              n_clicks=0),
-                                        dbc.DropdownMenuItem("PH", id="ph_sensor_dropdown_button", n_clicks=0),
-                                        dbc.DropdownMenuItem("EC", id="ec_sensor_dropdown_button", n_clicks=0),
+                                        dbc.DropdownMenuItem(
+                                            "PH", id="ph_sensor_dropdown_button", n_clicks=0),
+                                        dbc.DropdownMenuItem(
+                                            "EC", id="ec_sensor_dropdown_button", n_clicks=0),
                                         dbc.DropdownMenuItem("Temp", id="temp_sensor_dropdown_button",
                                                              n_clicks=0),
                                         dbc.DropdownMenuItem("Luftfeuchtigkeit",
@@ -204,7 +227,8 @@ def admin_dashboard_layout():
                             ),
                             dbc.Col(
                                 html.Div([
-                                    dbc.Input(type="number", min=0, max=365, step=1, id="number"),
+                                    dbc.Input(type="number", min=0,
+                                              max=365, step=1, id="number"),
                                     dbc.Tooltip(
                                         "Geben Sie eine Nummer zwischen 0-365",
                                         target="number",
@@ -215,8 +239,10 @@ def admin_dashboard_layout():
                             ),
                             dbc.Col(
                                 dbc.DropdownMenu([
-                                    dbc.DropdownMenuItem("Stunden", id="hour_dropdown_button", n_clicks=0),
-                                    dbc.DropdownMenuItem("Tage", id="days_dropdown_button", n_clicks=0),
+                                    dbc.DropdownMenuItem(
+                                        "Stunden", id="hour_dropdown_button", n_clicks=0),
+                                    dbc.DropdownMenuItem(
+                                        "Tage", id="days_dropdown_button", n_clicks=0),
                                 ],
                                     label="Zeiteinheit",
                                     id="time_dropdown",
@@ -225,7 +251,8 @@ def admin_dashboard_layout():
                                 width="auto",
                             ),
                             dbc.Col([
-                                dbc.Button("Herunterladen", id="download_button", n_clicks=0),
+                                dbc.Button("Herunterladen",
+                                           id="download_button", n_clicks=0),
                                 dcc.Download(id="download")
                             ], width="auto")
                         ],
@@ -241,7 +268,8 @@ def admin_dashboard_layout():
             dbc.Row([
                 # Error Log
                 dbc.Col([
-                    html.H4("Log:", className="mb-3", style={"color": COLOR_SCHEME['text_primary']}),
+                    html.H4("Log:", className="mb-3",
+                            style={"color": COLOR_SCHEME['text_primary']}),
                     dbc.Textarea(
                         id="error-log",
                         className="mb-3",
@@ -255,29 +283,26 @@ def admin_dashboard_layout():
                         },
                         readOnly=True
                     ),
-                    dbc.Button("Download Log", id="download-btn", color="primary", className="mt-2"),
+                    dbc.Button("Download Log", id="download-btn",
+                               color="primary", className="mt-2"),
                     dcc.Download(id="download-log"),
-                    dbc.Button("Clear Log", id="clear-log-btn", color="danger", className="mt-2 ms-2")
+                    dbc.Button("Clear Log", id="clear-log-btn",
+                               color="danger", className="mt-2 ms-2")
                 ], md=6),
 
                 # Kamera
                 dbc.Col([
-                    html.H4("Cam1:", className="mb-3", style={"color": COLOR_SCHEME['text_primary']}),
+                    html.H4("Cam1:", className="mb-3",
+                            style={"color": COLOR_SCHEME['text_primary']}),
                     # Kamera-Bereich
-                    html.Div(
-                        id="camera-feed",
-                        style={
-                            "height": "200px",
-                            "background-color": COLOR_SCHEME['log_bg'],
-                            "display": "flex",
-                            "align-items": "center",
-                            "justify-content": "center",
-                            "border": f"1px solid {COLOR_SCHEME['border']}",
-                            "border-radius": "4px"
-                        },
-                        children=html.P("Kamera-Feed nicht verfügbar",
-                                        style={"color": COLOR_SCHEME['text_primary']})
-                    ),
+                    html.Img(id="camera-feed", style={
+                        "height": "200px",
+                        "background-color": COLOR_SCHEME['log_bg'],
+                        "border": f"1px solid {COLOR_SCHEME['border']}",
+                        "border-radius": "4px"
+                    }),
+                    dcc.Interval(id="interval-component",
+                                 interval=1, n_intervals=0)
                 ], md=6),
             ], className="mb-4"),
             dcc.Interval(id="log-update", interval=10000, n_intervals=0),
@@ -285,9 +310,12 @@ def admin_dashboard_layout():
 
             # Steuerungselemente
             dbc.Row([
-                dcc.Interval(id="luefter-interval", interval=5 * 1000, n_intervals=0),
-                dcc.Interval(id="pumpe-interval", interval=5 * 1000, n_intervals=0),
-                dcc.Interval(id="licht-interval", interval=5 * 1000, n_intervals=0),
+                dcc.Interval(id="luefter-interval",
+                             interval=5 * 1000, n_intervals=0),
+                dcc.Interval(id="pumpe-interval",
+                             interval=5 * 1000, n_intervals=0),
+                dcc.Interval(id="licht-interval",
+                             interval=5 * 1000, n_intervals=0),
                 # Lüfter
                 dbc.Col([
                     dbc.Card([
@@ -505,7 +533,8 @@ def admin_dashboard_layout():
 def get_light_data():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT last_change, start_time, end_time FROM Light LIMIT 2")
+    cursor.execute(
+        "SELECT last_change, start_time, end_time FROM Light LIMIT 2")
     result = cursor.fetchall()
     conn.close()
     if result:
@@ -539,15 +568,20 @@ def update_light_data(last_change=None, start_time=None, end_time=None, second_s
 
     if exists:
         if last_change is not None:
-            cursor.execute("UPDATE Light SET last_change = ? WHERE ROWID = 1", (last_change,))
+            cursor.execute(
+                "UPDATE Light SET last_change = ? WHERE ROWID = 1", (last_change,))
         if start_time is not None:
-            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 1", (start_time,))
+            cursor.execute(
+                "UPDATE Light SET start_time = ? WHERE ROWID = 1", (start_time,))
         if end_time is not None:
-            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 1", (end_time,))
+            cursor.execute(
+                "UPDATE Light SET end_time = ? WHERE ROWID = 1", (end_time,))
         if second_start_time is not None:
-            cursor.execute("UPDATE Light SET start_time = ? WHERE ROWID = 2", (second_start_time,))
+            cursor.execute(
+                "UPDATE Light SET start_time = ? WHERE ROWID = 2", (second_start_time,))
         if second_end_time is not None:
-            cursor.execute("UPDATE Light SET end_time = ? WHERE ROWID = 2", (second_end_time,))
+            cursor.execute(
+                "UPDATE Light SET end_time = ? WHERE ROWID = 2", (second_end_time,))
     else:
         # Fallback-Eintrag
         cursor.execute("INSERT INTO Light (last_change, start_time, end_time) VALUES (?, ?, ?)", (
@@ -563,7 +597,8 @@ def update_light_data(last_change=None, start_time=None, end_time=None, second_s
 # ------------------------------
 @callback(
     Output("licht-switch", "value"),
-    Input("licht-interval", "n_intervals")  # Dummy Input, nur um beim Laden zu triggern
+    # Dummy Input, nur um beim Laden zu triggern
+    Input("licht-interval", "n_intervals")
 )
 def update_light_switch(n):
     # Verbindung zur DB öffnen
@@ -639,11 +674,14 @@ def update_pump_data(last_change=None, intervall=None, on_for=None):
 
     if exists:
         if last_change is not None:
-            cursor.execute("UPDATE Pump SET last_change = ? WHERE ROWID = 1", (last_change,))
+            cursor.execute(
+                "UPDATE Pump SET last_change = ? WHERE ROWID = 1", (last_change,))
         if intervall is not None:
-            cursor.execute("UPDATE Pump SET intervall = ? WHERE ROWID = 1", (intervall,))
+            cursor.execute(
+                "UPDATE Pump SET intervall = ? WHERE ROWID = 1", (intervall,))
         if on_for is not None:
-            cursor.execute("UPDATE Pump SET on_for = ? WHERE ROWID = 1", (on_for,))
+            cursor.execute(
+                "UPDATE Pump SET on_for = ? WHERE ROWID = 1", (on_for,))
     else:
         cursor.execute("INSERT INTO Pump (last_change, intervall, on_for) VALUES (?, ?, ?)", (
             last_change or "-", intervall or "10", on_for or "10",
@@ -658,7 +696,8 @@ def update_pump_data(last_change=None, intervall=None, on_for=None):
 # ------------------------------
 @callback(
     Output("pumpe-switch", "value"),
-    Input("pumpe-interval", "n_intervals")  # Dummy Input, nur um beim Laden zu triggern
+    # Dummy Input, nur um beim Laden zu triggern
+    Input("pumpe-interval", "n_intervals")
 )
 def update_pump_switch(n):
     # Verbindung zur DB öffnen
@@ -727,11 +766,14 @@ def update_fan_data(last_change=None, intervall=None, on_for=None):
 
     if exists:
         if last_change is not None:
-            cursor.execute("UPDATE Fan SET last_change = ? WHERE ROWID = 1", (last_change,))
+            cursor.execute(
+                "UPDATE Fan SET last_change = ? WHERE ROWID = 1", (last_change,))
         if intervall is not None:
-            cursor.execute("UPDATE Fan SET intervall = ? WHERE ROWID = 1", (intervall,))
+            cursor.execute(
+                "UPDATE Fan SET intervall = ? WHERE ROWID = 1", (intervall,))
         if on_for is not None:
-            cursor.execute("UPDATE Fan SET on_for = ? WHERE ROWID = 1", (on_for,))
+            cursor.execute(
+                "UPDATE Fan SET on_for = ? WHERE ROWID = 1", (on_for,))
     else:
         cursor.execute("INSERT INTO Fan (last_change, intervall, on_for) VALUES (?, ?, ?)", (
             last_change or "-", intervall or "10", on_for or "10",
@@ -825,9 +867,11 @@ def update_last_change(table_name, value):
     exists = cursor.fetchone()[0] > 0
 
     if exists:
-        cursor.execute(f"UPDATE {table_name} SET last_change = ? WHERE ROWID = 1", (value,))
+        cursor.execute(
+            f"UPDATE {table_name} SET last_change = ? WHERE ROWID = 1", (value,))
     else:
-        cursor.execute(f"INSERT INTO {table_name} (last_change) VALUES (?)", (value,))
+        cursor.execute(
+            f"INSERT INTO {table_name} (last_change) VALUES (?)", (value,))
 
     conn.commit()
     conn.close()
@@ -973,7 +1017,8 @@ def update_graph(*args):
             "font": {"color": COLOR_SCHEME['text_primary']},
             "xaxis": {
                 "type": "date",
-                "range": [past_24h.isoformat(), now.isoformat()],  # expliziter Bereich
+                # expliziter Bereich
+                "range": [past_24h.isoformat(), now.isoformat()],
                 "autorange": False,
                 "tickformat": "%H:%M\n%d.%m",  # Stunden + Datum z. B.
                 "gridcolor": COLOR_SCHEME['graph_grid'],
@@ -992,7 +1037,8 @@ def update_graph(*args):
 
 
 def lade_aktuelle_werte():
-    tabellen = ["Ultrasonic_Sensor", "PH_Sensor", "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]
+    tabellen = ["Ultrasonic_Sensor", "PH_Sensor",
+                "EC_Sensor", "Temp_Sensor", "Humidity_Sensor"]
     werte = {}
 
     conn = sqlite3.connect(DB_PATH)
@@ -1187,7 +1233,8 @@ def add_log(event_type, component, value=None):
     # CSV schreiben (append)
     file_exists = os.path.isfile(LOG_FILE)
     with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["timestamp", "event", "component", "value"])
+        writer = csv.DictWriter(
+            f, fieldnames=["timestamp", "event", "component", "value"])
         if not file_exists:  # Header nur einmal schreiben
             writer.writeheader()
         writer.writerow(log_entry)
@@ -1231,7 +1278,8 @@ def download_log(n_clicks):
 # Funktion: Log leeren
 # ------------------------------
 @callback(
-    Output("error-log", "value", allow_duplicate=True),  # Textarea sofort leeren
+    # Textarea sofort leeren
+    Output("error-log", "value", allow_duplicate=True),
     Input("clear-log-btn", "n_clicks"),  # Button klick
     prevent_initial_call=True
 )
@@ -1241,7 +1289,8 @@ def clear_log(n_clicks):
 
     # CSV leeren
     with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["timestamp", "event", "component", "value"])
+        writer = csv.DictWriter(
+            f, fieldnames=["timestamp", "event", "component", "value"])
         writer.writeheader()  # Header bleibt bestehen, Inhalt wird gelöscht
 
     return ""
@@ -1306,7 +1355,8 @@ def check_sensors():
             flow_value = flow_result[0]
             pump_status = pump_result[0]
             if flow_value == 0 and pump_status == 'online':
-                add_log("WARNING", "FlowRate_Sensor", "Wasser fließt nicht trotz Pumpenbetrieb")
+                add_log("WARNING", "FlowRate_Sensor",
+                        "Wasser fließt nicht trotz Pumpenbetrieb")
 
 
 # ------------------------------
@@ -1319,3 +1369,32 @@ def check_sensors():
 def periodic_sensor_check(n):
     check_sensors()  # füllt log_data bei Grenzwertverletzungen
     return ""
+
+
+# Kamera öffnen
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FPS, 30)
+
+
+def get_frame():
+    ret, frame = cap.read()
+    if not ret:
+        return None
+    # in JPEG umwandeln
+    _, buffer = cv2.imencode('.jpg', frame)
+    # in Base64 konvertieren
+    jpg_as_text = base64.b64encode(buffer).decode()
+    return f"data:image/jpeg;base64,{jpg_as_text}"
+
+# Callback für Interval
+
+
+@callback(
+    Output("camera-feed", "src"),
+    Input("interval-component", "n_intervals")
+)
+def update_image(n):
+    frame = get_frame()
+    if frame is None:
+        return ""
+    return frame
