@@ -75,13 +75,13 @@ class CameraFeed:
         jpg_as_text = base64.b64encode(buffer).decode()
         return f"data:image/jpeg;base64,{jpg_as_text}"
 
-    def layout(self):
+    def layout(self, cam_id, interval_id):
         """Kamera-UI (kann direkt in die Admin-Seite eingebunden werden)"""
         return [
             html.H4("Cam1:", className="mb-3",
                     style={"color": COLOR_SCHEME['text_primary']}),
             html.Img(
-                id="camera-feed",
+                id=cam_id,
                 style={
                     "height": "200px",
                     "background-color": COLOR_SCHEME['log_bg'],
@@ -89,6 +89,6 @@ class CameraFeed:
                     "border-radius": "4px"
                 }
             ),
-            dcc.Interval(id="interval-component", interval=100,
+            dcc.Interval(id=interval_id, interval=100,
                          n_intervals=0)  # alle 100 ms
         ]

@@ -288,7 +288,10 @@ def user_dashboard_layout():
 
                 # Kamera
                 dbc.Col(
-                    camera.layout(), md=6),
+                    camera.layout(cam_id="camera-feed-user",
+                                  interval_id="interval-user"),
+                    md=6
+                ),
             ], className="mb-4"),
             dcc.Interval(id="user_log_update", interval=10000, n_intervals=0),
 
@@ -1286,8 +1289,8 @@ def download_log(n_clicks):
 
 
 @callback(
-    Output("camera-feed", "src"),
-    Input("interval-component", "n_intervals")
+    Output("camera-feed-user", "src"),
+    Input("interval-user", "n_intervals")
 )
 def update_user_image(n):
     frame = camera.get_frame()

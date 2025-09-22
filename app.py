@@ -48,21 +48,25 @@ app.layout = dmc.MantineProvider(
     Input('url', 'pathname'),
 )
 def display_page(pathname):
-    if flask_session.get('logged_in'):
-        role = flask_session.get('role')
-        if pathname == "/admin" and role == "admin":
-            return admin_dashboard_layout()
-        elif pathname == "/user" and role == "user":
-            return user_dashboard_layout()
-        elif role == "admin":
-            return admin_dashboard_layout()
-        elif role == "user":
-            return user_dashboard_layout()
-        else:
-            return login_layout()
-    if pathname == "/register":
-        return register_layout()
-    return login_layout()
+    try:
+        if flask_session.get('logged_in'):
+            role = flask_session.get('role')
+            if pathname == "/admin" and role == "admin":
+                return admin_dashboard_layout()
+            elif pathname == "/user" and role == "user":
+                return user_dashboard_layout()
+            elif role == "admin":
+                return admin_dashboard_layout()
+            elif role == "user":
+                return user_dashboard_layout()
+            else:
+                return login_layout()
+        if pathname == "/register":
+            return register_layout()
+        return login_layout()
+    except Exception as e:
+        return html.Div(f"Fehler im Layout: {str(e)}")
+
 
 # ----------------- Login Callback -----------------
 

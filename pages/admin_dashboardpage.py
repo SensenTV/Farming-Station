@@ -293,7 +293,10 @@ def admin_dashboard_layout():
 
                 # Kamera
                 dbc.Col(
-                    camera.layout(), md=6),
+                    camera.layout(cam_id="camera-feed-admin",
+                                  interval_id="interval-admin"),
+                    md=6
+                ),
             ], className="mb-4"),
             dcc.Interval(id="log-update", interval=10000, n_intervals=0),
             html.Div(id="dummy-output", style={"display": "none"}),
@@ -1398,8 +1401,8 @@ def periodic_sensor_check(n):
 
 
 @callback(
-    Output("camera-feed", "src"),
-    Input("interval-component", "n_intervals")
+    Output("camera-feed-admin", "src"),
+    Input("interval-admin", "n_intervals")
 )
 # ------------------------------
 # Funktion: Kamera Bild anzeigen
