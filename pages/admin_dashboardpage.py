@@ -12,6 +12,7 @@ import cv2
 import base64
 from io import BytesIO
 from dash.dependencies import Input, Output
+from Sensors.camera_instance import camera
 
 DB_PATH = "./SQLite/sensors.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -291,19 +292,8 @@ def admin_dashboard_layout():
                 ], md=6),
 
                 # Kamera
-                dbc.Col([
-                    html.H4("Cam1:", className="mb-3",
-                            style={"color": COLOR_SCHEME['text_primary']}),
-                    # Kamera-Bereich
-                    html.Img(id="camera-feed", style={
-                        "height": "200px",
-                        "background-color": COLOR_SCHEME['log_bg'],
-                        "border": f"1px solid {COLOR_SCHEME['border']}",
-                        "border-radius": "4px"
-                    }),
-                    dcc.Interval(id="interval-component",
-                                 interval=1, n_intervals=0)
-                ], md=6),
+                dbc.Col(
+                    camera.layout(), md=6),
             ], className="mb-4"),
             dcc.Interval(id="log-update", interval=10000, n_intervals=0),
             html.Div(id="dummy-output", style={"display": "none"}),
@@ -822,6 +812,10 @@ def refresh_fan_inputs(n):
     fan_data = get_fan_data()
     return fan_data["intervall"], fan_data["on_for"]
 
+# ------------------------------
+# Funktion: Letzte Änderung aus DB nehmen
+# ------------------------------
+
 
 def get_last_change(table_name):
     conn = sqlite3.connect(DB_PATH)
@@ -830,6 +824,10 @@ def get_last_change(table_name):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else "-"
+
+# ------------------------------
+# Funktion: Letzte 24 Stunden im Graph anzeigen
+# ------------------------------
 
 
 def get_data_from_db(table_name: str, value_column: str):
@@ -858,6 +856,10 @@ def get_data_from_db(table_name: str, value_column: str):
     values = [row[1] for row in rows]
 
     return times, values
+
+# ------------------------------
+# Funktion: Letzte Änderrung aktualisieren
+# ------------------------------
 
 
 def update_last_change(table_name, value):
@@ -965,6 +967,9 @@ def update_timestamps(
      ],
     prevent_initial_call=True
 )
+# ------------------------------
+# Funktion: Graph aktualisieren
+# ------------------------------
 def update_graph(*args):
     ctx = callback_context
     if not ctx.triggered:
@@ -976,24 +981,30 @@ def update_graph(*args):
     past_24h = now - timedelta(hours=24)
 
     title = "24h Verlauf: "
-    table = None,
-    column = None,
+    table = None
+    column = None
+    unit = ""
 
     if button_id == "fuellstand-graph-btn":
         title += "Füllstand"
         table, column = "Ultrasonic_Sensor", "value"
+        unit = "%"
     elif button_id == "ph-graph-btn":
         title += "PH-Wert"
         table, column = "PH_Sensor", "value"
+        unit = ""
     elif button_id == "ec-graph-btn":
         title += "EC-Wert"
         table, column = "EC_Sensor", "value"
+        unit = "mS/cm"
     elif button_id == "temp-graph-btn":
         title += "Temperatur"
         table, column = "Temp_Sensor", "value"
+        unit = "°C"
     elif button_id == "luft-graph-btn":
         title += "Luftfeuchtigkeit"
         table, column = "Humidity_Sensor", "value"
+        unit = "%"
 
     if not table or not column:
         return {}, {"display": "none"}  # Kein Graph anzeigen, wenn ungültig
@@ -1008,7 +1019,7 @@ def update_graph(*args):
             "mode": "lines+markers",
             "line": {"color": COLOR_SCHEME['accent']},
             "marker": {"color": COLOR_SCHEME['accent']},
-            "hovertemplate": "%{y} °C<br>%{x|%d.%m.%y %H:%M} Uhr<extra></extra>"
+            "hovertemplate": f"%{{y}} {unit}<br>%{{x|%d.%m.%y %H:%M}} Uhr<extra></extra>"
         }],
         "layout": {
             "title": {"text": title, "font": {"color": COLOR_SCHEME['text_primary']}},
@@ -1034,6 +1045,10 @@ def update_graph(*args):
     }
 
     return fig, {"display": "block"}
+
+# ------------------------------
+# Funktion: Aktuelle Sensorwerte aus DB holen
+# ------------------------------
 
 
 def lade_aktuelle_werte():
@@ -1063,6 +1078,9 @@ def lade_aktuelle_werte():
     ],
     Input("werte-refresh", "n_intervals")
 )
+# ------------------------------
+# Funktion: Aktuelle Sensorwerte auf Website aktualisieren
+# ------------------------------
 def update_sensorwerte(n):
     werte = lade_aktuelle_werte()
     return (
@@ -1083,6 +1101,9 @@ def update_sensorwerte(n):
     Input("humidity_sensor_dropdown_button", "n_clicks"),
     Input("all_sensor_dropdown_button", "n_clicks")
 )
+# ------------------------------
+# Funktion: Dropdown Menü Sensorauswahl
+# ------------------------------
 def update_sensor_dropdown_label(n1, n2, n3, n4, n5, n6):
     if not ctx.triggered_id:
         return "Sensoren auswählen",
@@ -1105,6 +1126,9 @@ def update_sensor_dropdown_label(n1, n2, n3, n4, n5, n6):
     Input("hour_dropdown_button", "n_clicks"),
     Input("days_dropdown_button", "n_clicks"),
 )
+# ------------------------------
+# Funktion: Dropdown Menü Zeitauswahl
+# ------------------------------
 def update_time_dropdown_label(n1, n2):
     if not ctx.triggered_id:
         return "Zeiteinheit auswählen"
@@ -1370,31 +1394,16 @@ def periodic_sensor_check(n):
     check_sensors()  # füllt log_data bei Grenzwertverletzungen
     return ""
 
-
-# Kamera öffnen
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FPS, 30)
-
-
-def get_frame():
-    ret, frame = cap.read()
-    if not ret:
-        return None
-    # in JPEG umwandeln
-    _, buffer = cv2.imencode('.jpg', frame)
-    # in Base64 konvertieren
-    jpg_as_text = base64.b64encode(buffer).decode()
-    return f"data:image/jpeg;base64,{jpg_as_text}"
-
-# Callback für Interval
+# Callback hier registrieren → kein Circular Import
 
 
 @callback(
     Output("camera-feed", "src"),
     Input("interval-component", "n_intervals")
 )
+# ------------------------------
+# Funktion: Kamera Bild anzeigen
+# ------------------------------
 def update_image(n):
-    frame = get_frame()
-    if frame is None:
-        return ""
-    return frame
+    frame = camera._get_frame()
+    return "" if frame is None else frame
