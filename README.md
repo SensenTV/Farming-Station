@@ -1,5 +1,10 @@
 # Indoor Farming Station – Projektarbeit
 
+
+## Quick Stat Guide
+1. Run pip install -r /Stickpfad/requirements.txt
+2. Run python3 /MainPfad/app.py
+
 ## Koordination
 - Prof. Dr.-Ing. Pascal Stoffels  
 - Matthias Wilbert  
