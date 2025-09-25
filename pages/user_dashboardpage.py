@@ -353,7 +353,16 @@ def user_dashboard_layout():
                                           disabled=True,
                                           ),
                                 dbc.Label("Minuten einschalten", html_for="user_fan_intervall", className="me-2 mb-0",
-                                          style={"color": COLOR_SCHEME['text_primary']})
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Label("Intensität", html_for="user_fan_intensity", className="me-2 mb-0",
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.Button(
+                                    "wird geladen...",  # Platzhalter
+                                    id="user_fan_intensity",
+                                    color="secondary",
+                                    size="sm",
+                                    disabled=True,
+                                ),
                             ], className="d-flex align-items-center mt-2"),
                             html.Small(
                                 f"Last change: {get_last_change('Fan')}",
@@ -858,6 +867,29 @@ def refresh_fan_inputs(n):
     fan_data = get_fan_data()
     return fan_data["intervall"], fan_data["on_for"]
 
+# ------------------------------
+# Funktion: Lüfterintensität anzeigen
+# ------------------------------
+
+
+@callback(
+    Output("user_fan_intensity", "children"),
+    Input("user_fan_intensity", "id"),  # Dummy Input, nur zum initialen Laden
+    Input("user_refresh_interval", "n_intervals"),
+)
+def load_user_fan_intensity(dummy_id, n_intervals):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT intensity FROM Fan WHERE rowid = 1")
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else "Nicht gesetzt"
+
+
+# ------------------------------
+# Funktion: Letzte Änderung aus DB nehmen
+# ------------------------------
+
 
 def get_last_change(table_name):
     conn = sqlite3.connect(DB_PATH)
@@ -866,6 +898,10 @@ def get_last_change(table_name):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else "-"
+
+# ------------------------------
+# Funktion: Letzte 24 Stunden im Graph anzeigen
+# ------------------------------
 
 
 def get_data_from_db(table_name: str, value_column: str):
@@ -894,6 +930,10 @@ def get_data_from_db(table_name: str, value_column: str):
     values = [row[1] for row in rows]
 
     return times, values
+
+# ------------------------------
+# Funktion: Letzte Änderrung aktualisieren
+# ------------------------------
 
 
 def update_last_change(table_name, value):
@@ -999,6 +1039,9 @@ def update_timestamps(
      Input("user_luft_graph_btn", "n_clicks")],
     prevent_initial_call=True
 )
+# ------------------------------
+# Funktion: Graph aktualisieren
+# ------------------------------
 def update_graph(*args):
     ctx = callback_context
     if not ctx.triggered:
@@ -1069,6 +1112,10 @@ def update_graph(*args):
 
     return fig, {"display": "block"}
 
+# ------------------------------
+# Funktion: Aktuelle Sensorwerte aus DB holen
+# ------------------------------
+
 
 def lade_aktuelle_werte():
     tabellen = ["Ultrasonic_Sensor", "PH_Sensor",
@@ -1097,6 +1144,9 @@ def lade_aktuelle_werte():
     ],
     Input("werte-refresh", "n_intervals")
 )
+# ------------------------------
+# Funktion: Aktuelle Sensorwerte auf Website aktualisieren
+# ------------------------------
 def update_sensorwerte(n):
     werte = lade_aktuelle_werte()
     return (
@@ -1117,6 +1167,9 @@ def update_sensorwerte(n):
     Input("user_humidity_sensor_dropdown_button", "n_clicks"),
     Input("user_all_sensor_dropdown_button", "n_clicks")
 )
+# ------------------------------
+# Funktion: Dropdown Menü Sensorauswahl
+# ------------------------------
 def update_sensor_dropdown_label(n1, n2, n3, n4, n5, n6):
     if not ctx.triggered_id:
         return "Sensoren auswählen",
@@ -1139,6 +1192,9 @@ def update_sensor_dropdown_label(n1, n2, n3, n4, n5, n6):
     Input("user_hour_dropdown_button", "n_clicks"),
     Input("user_days_dropdown_button", "n_clicks"),
 )
+# ------------------------------
+# Funktion: Dropdown Menü Zeitauswahl
+# ------------------------------
 def update_time_dropdown_label(n1, n2):
     if not ctx.triggered_id:
         return "Zeiteinheit auswählen"
@@ -1292,6 +1348,9 @@ def download_log(n_clicks):
     Output("camera-feed-user", "src"),
     Input("interval-user", "n_intervals")
 )
+# ------------------------------
+# Funktion: Kamera Bild anzeigen
+# ------------------------------
 def update_user_image(n):
-    frame = camera.get_frame()
+    frame = camera._get_frame()
     return "" if frame is None else frame

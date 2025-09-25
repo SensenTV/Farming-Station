@@ -143,8 +143,6 @@ def logout(n_clicks_list):
 # ----------------- Scheduler -----------------
 scheduler = BackgroundScheduler()
 scheduler.add_job(data_deletion.delete_old_data, 'cron', hour=0, minute=1)
-# scheduler.add_job(sensors.add_to_db, "interval", seconds=10)
-# scheduler.add_job(sensors.sensor_activate, "interval", seconds=5, max_instances=1, coalesce=True, misfire_grace_time=10)
 scheduler.start()
 
 
@@ -163,7 +161,7 @@ async def sensor_loop():
 async def db_add_loop():
     while True:
         await sensors.add_to_db()
-        await asyncio.sleep(60)
+        await asyncio.sleep(7200)
 
 
 async def main():

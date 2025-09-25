@@ -357,7 +357,19 @@ def admin_dashboard_layout():
                                           value=fan_data["on_for"]
                                           ),
                                 dbc.Label("Minuten einschalten", html_for="fan-intervall", className="me-2 mb-0",
-                                          style={"color": COLOR_SCHEME['text_primary']})
+                                          style={"color": COLOR_SCHEME['text_primary']}),
+                                dbc.DropdownMenu([
+                                    dbc.DropdownMenuItem(
+                                        "stark", id="fan_high_intensity_dropdown_button", n_clicks=0),
+                                    dbc.DropdownMenuItem(
+                                        "mittel", id="fan_mid_intensity_dropdown_button", n_clicks=0),
+                                    dbc.DropdownMenuItem(
+                                        "schwach", id="fan_low_intensity_dropdown_button", n_clicks=0),
+                                ],
+                                    label="Intensität",
+                                    id="fan_dropdown",
+                                    className="me-2",
+                                ),
                             ], className="d-flex align-items-center mt-2"),
                             html.Small(
                                 f"Last change: {get_last_change('Fan')}",
@@ -814,6 +826,44 @@ def update_fan_switch(n):
 def refresh_fan_inputs(n):
     fan_data = get_fan_data()
     return fan_data["intervall"], fan_data["on_for"]
+
+
+@callback(
+    Output("fan_dropdown", "label"),
+    Input("fan_high_intensity_dropdown_button", "n_clicks"),
+    Input("fan_mid_intensity_dropdown_button", "n_clicks"),
+    Input("fan_low_intensity_dropdown_button", "n_clicks"),
+)
+# ------------------------------
+# Funktion: Dropdown Menü Intesitätsauswahl
+# ------------------------------
+def update_fan_dropdown_label(n1, n2, n3):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Falls nichts getriggert wurde → aktuellen Wert aus DB laden
+    if not ctx.triggered_id:
+        cursor.execute("SELECT intensity FROM Fan WHERE rowid = 1")
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else "Intensität auswählen"
+
+    # Mapping der Buttons
+    mapping = {
+        "fan_high_intensity_dropdown_button": "Stark",
+        "fan_mid_intensity_dropdown_button": "Mittel",
+        "fan_low_intensity_dropdown_button": "Schwach",
+    }
+
+    selected = mapping.get(ctx.triggered_id, "Intensität auswählen")
+
+    # Update in der DB schreiben
+
+    cursor.execute("UPDATE Fan SET intensity = ? WHERE rowid = 1", (selected,))
+    conn.commit()
+    conn.close()
+
+    return selected
 
 # ------------------------------
 # Funktion: Letzte Änderung aus DB nehmen
