@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="4aa6ee2a-2930-436c-8b22-de1c2073761a" name="Changes" comment="1. uniques entfernt" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="SQL File" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;SensenTV&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/SensenTV/Farming-Station.git&quot;,
+    &quot;accountId&quot;: &quot;7749c5e9-f997-42b0-b838-eb435c468131&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="2zXHAPg50Wv1ElfVoPpRENAerVj" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flask server.Farming-Station.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.Farming-Station.executor&quot;: &quot;Run&quot;,
+    &quot;Python.admin_dashboardpage.executor&quot;: &quot;Run&quot;,
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.data_deletion.executor&quot;: &quot;Run&quot;,
+    &quot;Python.sqlight.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;aDefault&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;sqlite&quot;
+    ]
+  }
+}</component>
+  <component name="RunManager" selected="Flask server.Farming-Station">
+    <configuration name="Farming-Station" type="PythonConfigurationType" factoryName="Python">
+      <module name="Farming-Station" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Farming-Station" type="Python.FlaskServer">
+      <module name="Farming-Station" />
+      <option name="target" value="$PROJECT_DIR$/app.py" />
+      <option name="targetType" value="PATH" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="launchJavascriptDebuger" value="false" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-PY-251.26927.74" />
+        <option value="bundled-python-sdk-657d8234b839-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.74" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="4aa6ee2a-2930-436c-8b22-de1c2073761a" name="Changes" comment="" />
+      <created>1751870353995</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1751870353995</updated>
+      <workItem from="1751870355255" duration="1481000" />
+      <workItem from="1751871856601" duration="235000" />
+      <workItem from="1751872102629" duration="24000" />
+      <workItem from="1751872133038" duration="228000" />
+      <workItem from="1751872371647" duration="111000" />
+      <workItem from="1751872494358" duration="15488000" />
+      <workItem from="1751973457928" duration="3827000" />
+      <workItem from="1752049053418" duration="1615000" />
+      <workItem from="1755848742960" duration="497000" />
+      <workItem from="1756708804113" duration="81000" />
+      <workItem from="1756708913545" duration="8542000" />
+      <workItem from="1756743412612" duration="1097000" />
+      <workItem from="1756797011565" duration="11594000" />
+      <workItem from="1756976381651" duration="3818000" />
+      <workItem from="1757237020717" duration="12851000" />
+      <workItem from="1757250071286" duration="511000" />
+      <workItem from="1757250671125" duration="6956000" />
+      <workItem from="1757260804663" duration="154000" />
+      <workItem from="1757314594122" duration="12781000" />
+      <workItem from="1757496232869" duration="9166000" />
+      <workItem from="1757512950287" duration="5580000" />
+      <workItem from="1757858165657" duration="99000" />
+      <workItem from="1758102916329" duration="1336000" />
+      <workItem from="1758105194718" duration="812000" />
+      <workItem from="1758265666464" duration="1295000" />
+      <workItem from="1758277486550" duration="102000" />
+      <workItem from="1758538793691" duration="695000" />
+      <workItem from="1758794446311" duration="618000" />
+    </task>
+    <task id="LOCAL-00001" summary="Sensor Databank">
+      <option name="closed" value="true" />
+      <created>1751877529372</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1751877529372</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Sensor Databank &#10;Last change für Lüfter, Licht und Wasserpumpe&#10;für licht auch noch die zeiten wann das licht eingeschaltet und ausgeschaltet ist">
+      <option name="closed" value="true" />
+      <created>1751885326713</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1751885326713</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Graph button auf einer höhe">
+      <option name="closed" value="true" />
+      <created>1751889963000</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1751889963000</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Graphen zeigen nur die letzten 24 stunden direkt, man kann aber rauszoomen um vorherige oder theoretisch auch zukünftige werte zu sehen&#10;&#10;Temperatur daten händig eingefügt um zu sehen ob es funktioniert und das tud es">
+      <option name="closed" value="true" />
+      <created>1751893029959</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1751893029959</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Live Sensorwerte werden abgefragt über die Datenbank">
+      <option name="closed" value="true" />
+      <created>1751976849740</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1751976849740</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Mode Buttons für die Graphen minimiert auf das nötigste">
+      <option name="closed" value="true" />
+      <created>1752050653875</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1752050653875</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Sensor Daten Downloadbar als CSV Datei">
+      <option name="closed" value="true" />
+      <created>1756716974625</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1756716974625</updated>
+    </task>
+    <task id="LOCAL-00008" summary="1. Ultrasonic sensor mit water level Sensor getauscht&#10;2. Alle 365 Tage wird der 366 Eintrag gelöscht → anhand von den timestamps&#10;3. Licht hat jetzt noch ein zweites Intervallfenster">
+      <option name="closed" value="true" />
+      <created>1756808967936</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1756808967936</updated>
+    </task>
+    <task id="LOCAL-00009" summary="1. Pumpenzeitschalter hinzugefügt&#10;2. Lüfterzeitschalter hinzugefügt">
+      <option name="closed" value="true" />
+      <created>1757240611255</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1757240611255</updated>
+    </task>
+    <task id="LOCAL-00010" summary="1. Buttons für Lüfter, licht und Pumpe gehen je nach status an oder aus &#10;2. Alle Sensoren haben in der Datenbank noch die Column status bekommen, diese wird dann immer von der (sensoren methode auf online oder offline gestellt) &lt;-- muss noch gemacht werden">
+      <option name="closed" value="true" />
+      <created>1757243110396</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1757243110396</updated>
+    </task>
+    <task id="LOCAL-00011" summary="1. Log für sensoren erstellt&#10;2. Buttons werden automatisch gesetzt ohne F5 drücken zu müssen">
+      <option name="closed" value="true" />
+      <created>1757249324191</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1757249324191</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Lüfter und Pumpe displayen alles richtig">
+      <option name="closed" value="true" />
+      <created>1757249783758</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1757249783758</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Sensor Change">
+      <option name="closed" value="true" />
+      <created>1757250727849</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1757250727849</updated>
+    </task>
+    <task id="LOCAL-00014" summary="db relative path">
+      <option name="closed" value="true" />
+      <created>1757251673490</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1757251673490</updated>
+    </task>
+    <task id="LOCAL-00015" summary="starten der sensoren">
+      <option name="closed" value="true" />
+      <created>1757252977643</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1757252977643</updated>
+    </task>
+    <task id="LOCAL-00016" summary="1. User dashboard angelegt mit begrenzten Möglichkeiten&#10;2. Datenbank angepasst&#10;3. Refreshs gemacht sodass man nicht f5 drücken muss&#10;4. Logout button hinzugefügt">
+      <option name="closed" value="true" />
+      <created>1757326737628</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1757326737628</updated>
+    </task>
+    <task id="LOCAL-00017" summary="1. Code Cleanup&#10;2. User Dashboard Zeiteinstellungen angepasst">
+      <option name="closed" value="true" />
+      <created>1757500267018</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1757500267018</updated>
+    </task>
+    <task id="LOCAL-00018" summary="1. Primary Keys entfernt &#10;2. Column Status entfernt bei 6 Sensoren">
+      <option name="closed" value="true" />
+      <created>1757501727702</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1757501727702</updated>
+    </task>
+    <task id="LOCAL-00019" summary="1. log logik auf admin dashboard only gelegt user laden nur den log">
+      <option name="closed" value="true" />
+      <created>1757504309023</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1757504309023</updated>
+    </task>
+    <task id="LOCAL-00020" summary="1. waterlevel nicht mehr unique">
+      <option name="closed" value="true" />
+      <created>1758103095493</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1758103095493</updated>
+    </task>
+    <task id="LOCAL-00021" summary="1. uniques entfernt">
+      <option name="closed" value="true" />
+      <created>1758105374485</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1758105374485</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Sensor Databank" />
+    <MESSAGE value="Sensor Databank &#10;Last change für Lüfter, Licht und Wasserpumpe&#10;für licht auch noch die zeiten wann das licht eingeschaltet und ausgeschaltet ist" />
+    <MESSAGE value="Graph button auf einer höhe" />
+    <MESSAGE value="Graphen zeigen nur die letzten 24 stunden direkt, man kann aber rauszoomen um vorherige oder theoretisch auch zukünftige werte zu sehen&#10;&#10;Temperatur daten händig eingefügt um zu sehen ob es funktioniert und das tud es" />
+    <MESSAGE value="Live Sensorwerte werden abgefragt über die Datenbank" />
+    <MESSAGE value="Mode Buttons für die Graphen minimiert auf das nötigste" />
+    <MESSAGE value="Sensor Daten Downloadbar als CSV Datei" />
+    <MESSAGE value="1. Ultrasonic sensor mit water level Sensor getauscht&#10;2. Alle 365 Tage wird der 366 Eintrag gelöscht → anhand von den timestamps&#10;3. Licht hat jetzt noch ein zweites Intervallfenster" />
+    <MESSAGE value="1. Pumpenzeitschalter hinzugefügt&#10;2. Lüfterzeitschalter hinzugefügt" />
+    <MESSAGE value="1. Buttons für Lüfter, licht und Pumpe gehen je nach status an oder aus &#10;2. Alle Sensoren haben in der Datenbank noch die Column status bekommen, diese wird dann immer von der (sensoren methode auf online oder offline gestellt) &lt;-- muss noch gemacht werden" />
+    <MESSAGE value="1. Log für sensoren erstellt&#10;2. Buttons werden automatisch gesetzt ohne F5 drücken zu müssen" />
+    <MESSAGE value="Lüfter und Pumpe displayen alles richtig" />
+    <MESSAGE value="Sensor Change" />
+    <MESSAGE value="db relative path" />
+    <MESSAGE value="starten der sensoren" />
+    <MESSAGE value="1. User dashboard angelegt mit begrenzten Möglichkeiten&#10;2. Datenbank angepasst&#10;3. Refreshs gemacht sodass man nicht f5 drücken muss&#10;4. Logout button hinzugefügt" />
+    <MESSAGE value="1. Code Cleanup&#10;2. User Dashboard Zeiteinstellungen angepasst" />
+    <MESSAGE value="1. Primary Keys entfernt &#10;2. Column Status entfernt bei 6 Sensoren" />
+    <MESSAGE value="1. log logik auf admin dashboard only gelegt user laden nur den log" />
+    <MESSAGE value="1. waterlevel nicht mehr unique" />
+    <MESSAGE value="1. uniques entfernt" />
+    <option name="LAST_COMMIT_MESSAGE" value="1. uniques entfernt" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Farming_Station$admin_dashboardpage.coverage" NAME="admin_dashboardpage Coverage Results" MODIFIED="1757316650567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pages" />
+    <SUITE FILE_PATH="coverage/Farming_Station$sqlight.coverage" NAME="sqlight Coverage Results" MODIFIED="1751873135149" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/SQLight" />
+    <SUITE FILE_PATH="coverage/Farming_Station$Farming_Station.coverage" NAME="Farming-Station Coverage Results" MODIFIED="1758538857203" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/Farming_Station$data_deletion.coverage" NAME="data_deletion Coverage Results" MODIFIED="1756803809404" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/SQLite" />
+    <SUITE FILE_PATH="coverage/Farming_Station$app.coverage" NAME="app Coverage Results" MODIFIED="1757503968131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+</project>
