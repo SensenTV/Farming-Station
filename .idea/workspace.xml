@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4aa6ee2a-2930-436c-8b22-de1c2073761a" name="Changes" comment="1. uniques entfernt" />
+    <list default="true" id="4aa6ee2a-2930-436c-8b22-de1c2073761a" name="Changes" comment="1. Neue Dokumentation hinzugefügt">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -116,7 +118,7 @@
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
@@ -167,7 +169,7 @@
       <workItem from="1758265666464" duration="1295000" />
       <workItem from="1758277486550" duration="102000" />
       <workItem from="1758538793691" duration="695000" />
-      <workItem from="1758794446311" duration="618000" />
+      <workItem from="1758794446311" duration="1357000" />
     </task>
     <task id="LOCAL-00001" summary="Sensor Databank">
       <option name="closed" value="true" />
@@ -337,7 +339,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758105374485</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="1. Neue Dokumentation hinzugefügt">
+      <option name="closed" value="true" />
+      <created>1758796558562</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1758796558562</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -388,7 +398,8 @@
     <MESSAGE value="1. log logik auf admin dashboard only gelegt user laden nur den log" />
     <MESSAGE value="1. waterlevel nicht mehr unique" />
     <MESSAGE value="1. uniques entfernt" />
-    <option name="LAST_COMMIT_MESSAGE" value="1. uniques entfernt" />
+    <MESSAGE value="1. Neue Dokumentation hinzugefügt" />
+    <option name="LAST_COMMIT_MESSAGE" value="1. Neue Dokumentation hinzugefügt" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Farming_Station$admin_dashboardpage.coverage" NAME="admin_dashboardpage Coverage Results" MODIFIED="1757316650567" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pages" />
