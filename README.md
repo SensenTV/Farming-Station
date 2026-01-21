@@ -5,6 +5,10 @@
 1. Run pip install -r /Stickpfad/requirements.txt
 2. Run python3 /MainPfad/app.py
 
+## Anmeldedaten Admin Dashboard
+- Benutzername: root
+- Passwort: farmingstationroot
+
 ## Koordination
 - Prof. Dr.-Ing. Pascal Stoffels  
 - Matthias Wilbert  
@@ -137,3 +141,4 @@ Die Grenzwerte können im Code (Datei `admin_dashboardpage.py`) angepasst werden
    python app.py
    ```
    Die Website ist dann erreichbar unter: `http://<raspberrypi-ip>:8050`
+
