@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, time
+import time
 import asyncio
 from threading import Lock
 import sqlite3
@@ -21,22 +22,19 @@ from gpiozero import PWMLED, LED, Button, PWMOutputDevice
 
 # Led initialisierung
 pump_led = PWMLED(12)     # GPIO 12 (Pin 32)
-light_led = PWMLED(6)     # GPIO 13 (Pin 33)
+light_led = PWMLED(6)     # GPIO 6  (Pin 31)
+pump_schl = PWMLED(5)     # GPIO 5  (Pin 29)
 
 # Fan initialisierung
 fan_pin = 26  # GPIO-Pin am HW-517
 fan = PWMOutputDevice(fan_pin)  # automatisch über pigpio
 
-# DHT11 Temperature and Humidity Sensor
-# Verbunden an GPIO 17, Pin 1
-dhtDevice = adafruit_dht.DHT11(board.D17)
+# DHT22 Temperature and Humidity Sensor
+# Verbunden an GPIO 17, Pin 11
+dhtDevice = adafruit_dht.DHT22(board.D17)
 
-# Water Sensor (ADS Channel 3)
-ADC = Adafruit_ADS1x15.ADS1115(busnum=1)
-ADC_Channel = 3
-Gain = 1
-Min_ADC_Value = 0
-Max_ADC_Value = 32767
+# Water Sensor (ADS Channel 3) --- entfernt
+
 
 # Ultrasonic Sensor für Wasserstand
 # Echo Pin verbunden an GPIO 27, Pin 13
@@ -45,9 +43,9 @@ sonar = adafruit_hcsr04.HCSR04(trigger_pin=board.D27, echo_pin=board.D22)
 d_max = 50  # Abstand(cm) bei leerem Tank
 d_min = 5   # Abstand(cm) bei vollem Tank
 
-# PH Sensor (ADS Channel 2)
-mess_n = (3.773, 4.01)       # niedriger Ph
-mess_h = (3.229, 9.14)       # hoher Ph
+# PH Sensor (ADS Channel 1)
+mess_n = (1.419, 4.01)       # niedriger Ph
+mess_h = (2.022, 9.14)       # hoher Ph
 cali_m = (mess_h[1] - mess_n[1]) / (mess_h[0] - mess_n[0])
 cali_y = mess_n[1] - (cali_m * mess_n[0])
 ph_val = 0
@@ -59,17 +57,15 @@ i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1115(i2c)
 ads.gain = 1
 
-# TDS Sensor (ADS Channel 1)
+# TDS Sensor (ADS Channel 0)
 i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1115(i2c)
 ads.gain = 1
-temperature = 25
+SCOUNT = 11
+VREF = 5.0                 # nur relevant, falls externer ADC skaliert
+tds_border = await get_tds_barrier()  # TDS-Schwellenwert
 
-# Flowrate Sensor
-PIN = 24
-K = 450.0  # Impulse pro Liter
-pulse_count = 0
-total_pulses = 0
+# Flowrate Sensor --- entfernt
 
 
 # =============================
@@ -82,18 +78,26 @@ def count_pulse():
     pulse_count += 1
     total_pulses += 1
 
-
-waterflow = Button(PIN, pull_up=True)
-waterflow.when_pressed = count_pulse
-
-PRINT_INTERVAL = 1.0  # Sekunden für Flowrate-Berechnung
-
-
 def parse_time(value):
     """Konvertiert String in datetime.time, falls nötig"""
     if isinstance(value, str):
         return datetime.strptime(value, "%H:%M").time()
     return value
+
+def ec_from_voltage(v):
+    """Gibt die Funktion raus um Volt in EC umzuwandeln"""
+    a = 70.712
+    b = 135.264
+    c = 213.240
+    d = 267.609
+
+    return a * v**3 + b * v**2 + c * v + d
+
+def median(values):
+    """Medianberechnung einer Zahlenliste"""
+    values = sorted(values)
+    n = len(values)
+    return values[n // 2] if n % 2 else (values[n//2 - 1] + values[n//2]) / 2
 
 # =============================
 # Sensor-State
@@ -181,6 +185,18 @@ async def get_light_config():
 
     return (start1, end1), (start2, end2)
 
+async def get_tds_barrier():
+    """Liest den EC/TDS Grenzwert aus der DB"""
+    
+    row = await safe_db_fetchone(
+        "SELECT tds_barrier FROM EC_Sensor WHERE rowid = 1"
+    )
+
+    if row and row[0] is not None:
+        return float(row[0])
+
+    return 1000  # fallback
+
 
 # =============================
 # Sensorwerte in DB speichern (alle 2 Stunden)
@@ -231,15 +247,7 @@ async def add_to_db():
 async def sensor_activate():
     """Liest alle Sensoren aus und schreibt Live-Werte in die DB"""
     # Water Sensor
-    try:
-        adc_value = ADC.read_adc(ADC_Channel, gain=Gain)
-        fill_percent = (adc_value - Min_ADC_Value) / \
-            (Max_ADC_Value - Min_ADC_Value) * 100
-        update_sensor_state("water_level", fill_percent)
-        await safe_db_execute("UPDATE WaterLevel_Sensor SET live_value=? WHERE rowid=?",
-                              (safe_round(fill_percent), 1))
-    except KeyboardInterrupt:
-        print("\nScript terminated by User.")
+    # Wurde entfernt-------------------------------------------------------------------
 
     # Ultrasonic Sensor
     try:
@@ -256,8 +264,8 @@ async def sensor_activate():
 
     # PH Sensor
     try:
+        chan = AnalogIn(ads, ADS.P1)
         for i in range(10):
-            chan = AnalogIn(ads, ADS.P2)
             buffer_arr[i] = chan.voltage
             await asyncio.sleep(0.05)
         buffer_arr.sort()
@@ -270,14 +278,27 @@ async def sensor_activate():
 
     # TDS Sensor
     try:
-        adc_value = AnalogIn(ads, ADS.P1)
-        compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0)
-        compensationVolt = adc_value.voltage / compensationCoefficient
-        tds_value = (133.42*compensationVolt**3 - 255.86 *
-                     compensationVolt**2 + 857.39*compensationVolt)*0.5
+        buffer = []
+        tds_chan = AnalogIn(ads, ADS.P0)   # TDS/EC Sensor an A0
+        for _ in range(SCOUNT):
+            buffer.append(tds_chan.voltage)
+            await asyncio.sleep(0.05)
+
+        median_voltage = median(buffer)
+
+        tds_value = ec_from_voltage(median_voltage)
+
         update_sensor_state("tds", tds_value)
         await safe_db_execute("UPDATE EC_Sensor SET live_value=? WHERE rowid=?",
                               (safe_round(sensor_state["tds"]), 1))
+        if tds_value < tds_border:
+            pump_schl.on()
+            await asyncio.sleep(1)
+            pump_schl.off()
+            await asyncio.sleep(2)
+        else:
+            pump_schl.off()
+        
     except KeyboardInterrupt:
         print("\nScript terminated by User.")
 
@@ -321,37 +342,26 @@ async def read_dht():
 
 async def pump_and_waterflow_cycle():
     """Steuert die Pumpe zyklisch und überwacht die Flowrate"""
-    global pulse_count, total_pulses
+    # Flowrate Sensor wurde entfernt----------------------------------------------------------
+    await safe_db_execute("UPDATE FlowRate_Sensor SET status=? WHERE rowid=?", ("offline", 1))
     while True:
         intervall, dauer = await get_pump_config()
-        print(f"⏱️ Warte {intervall}m bis zum nächsten Pumpenlauf...")
+        print(f"Warte {intervall}m bis zum nächsten Pumpenlauf...")
         await asyncio.sleep(intervall*60)
 
-        print(f"💡 Pumpe EIN für {dauer}m")
+        print(f"Pumpe EIN für {dauer}m")
         pump_led.on()
         await safe_db_execute("UPDATE Pump SET status=? WHERE rowid=?", ("online", 1))
 
-        start_time = time.time()
+        start_time = datetime.now().timestamp()
         last_time = start_time
 
         while time.time()-start_time < dauer*60:
-            await asyncio.sleep(PRINT_INTERVAL)
-            now = time.time()
-            elapsed = now - last_time
-            last_time = now
-
-            pulses = pulse_count
-            pulse_count = 0
-            flow_l_min = (pulses/elapsed)*(60.0/K) if pulses else 0.0
-            print(f"💧 Durchfluss: {flow_l_min:.3f} L/min | Impulse: {pulses}")
-
-            await safe_db_execute("UPDATE FlowRate_Sensor SET value=?, status=? WHERE rowid=?",
-                                  (flow_l_min, "online", 1))
+            await asyncio.sleep(intervall * 60)
 
         pump_led.off()
-        print("💡 Pumpe AUS")
+        print("Pumpe AUS")
         await safe_db_execute("UPDATE Pump SET status=? WHERE rowid=?", ("offline", 1))
-        await safe_db_execute("UPDATE FlowRate_Sensor SET status=? WHERE rowid=?", ("offline", 1))
 
 
 async def start_pump_loop():

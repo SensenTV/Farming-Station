@@ -131,6 +131,18 @@ def admin_dashboard_layout():
 
                         dbc.Row([
                             dbc.Col(
+                                html.Strong("EC Grenze: ", style={
+                                    "color": COLOR_SCHEME['text_primary']
+                                }),
+                                width="auto"
+                            ),
+                            dbc.Col(
+                                dbc.Input(type="number", min=0, id="ec-grenzwert")
+                            ),
+                        ], align="center", className="mb-2"),
+
+                        dbc.Row([
+                            dbc.Col(
                                 html.Strong("Temp: ", style={
                                             "color": COLOR_SCHEME['text_primary']}),
                                 width="auto"
@@ -525,7 +537,14 @@ def admin_dashboard_layout():
                 id='admin-refresh-interval',
                 interval=3000,
                 n_intervals=0
-            )
+            ),
+
+        dcc.Interval(
+            id="load-ec-once",
+            interval=100,
+            n_intervals=0,
+            max_intervals=1
+        )
         ],
         fluid=True,
         style={"background-color": COLOR_SCHEME['background']}
@@ -1447,8 +1466,56 @@ def periodic_sensor_check(n):
     check_sensors()  # füllt log_data bei Grenzwertverletzungen
     return ""
 
-# Callback hier registrieren → kein Circular Import
+# ------------------------------
+# Funktion: EC Grenze aus DB laden
+# ------------------------------
+@callback(
+    Output("ec-grenzwert", "value"),
+    Input("load-ec-once", "n_intervals")
+)
+def load_ec_barrier(_):
 
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT tds_barrier
+            FROM EC_Sensor
+            LIMIT 1
+        """)
+
+        result = cursor.fetchone()
+
+    if result and result[0] is not None:
+        return result[0]
+
+    return 0
+
+# ------------------------------
+# Funktion: EC Grenze in DB schreiben
+# ------------------------------
+@callback(
+    Output("ec-grenzwert", "valid"),   # irgendein Output nötig
+    Input("ec-grenzwert", "value"),
+    prevent_initial_call=True
+)
+def write_ec_barrier(value):
+
+    if value is None:
+        return False
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE EC_Sensor
+            SET tds_barrier = ?
+            WHERE rowid = 1
+        """, (value,))
+
+        conn.commit()
+
+    return True
 
 @callback(
     Output("camera-feed-admin", "src"),
